@@ -29,3 +29,7 @@ talosconfig
 .netrc
 .git-credentials
 hosts.yml
+
+# Claude Code login and state
+.credentials.json
+*claude.json

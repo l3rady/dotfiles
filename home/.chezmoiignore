@@ -1,2 +1,20 @@
 # oh-my-zsh writes its cache inside ~/.oh-my-zsh; keep chezmoi from wiping it
 .oh-my-zsh/cache/**
+
+# Claude Code: only hand-written config is tracked (see README). Never let
+# credentials, history or machine state be added, even by accident.
+.claude.json
+.claude/.credentials.json
+.claude/settings.local.json
+.claude/projects
+.claude/sessions
+.claude/history.jsonl
+.claude/file-history
+.claude/shell-snapshots
+.claude/backups
+.claude/cache
+.claude/state
+.claude/session-env
+.claude/downloads
+.claude/skills/synced
+.claude/plugins

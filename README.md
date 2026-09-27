@@ -78,6 +78,28 @@ bash ~/.local/share/chezmoi/install.sh
 | Commit and push | `chezmoi cd` then normal `git add/commit/push` |
 | Pull changes on another machine | `chezmoi update` |
 
+## Claude Code
+
+Installed with Homebrew (`claude-code@latest` cask). Only hand-written config
+is tracked, so it follows me to every machine:
+
+| Tracked | Why |
+|---|---|
+| `~/.claude/settings.json` | Theme, model, permissions, hooks, status line |
+| `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
+
+Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
+added by accident: `~/.claude.json` (account, machine ID, project history),
+`~/.claude/.credentials.json` (login token), `settings.local.json`
+(per-machine overrides), and session data such as `projects/`, `sessions/`,
+`history.jsonl` and `file-history/`. Skills and plugins synced from claude.ai
+arrive on their own.
+
+Claude Code rewrites `settings.json` when you change a setting in `/config`.
+Run `chezmoi re-add` afterwards to save the change, or the next
+`chezmoi apply` will undo it. Secrets such as API keys in `env` or MCP server
+tokens come from Bitwarden via a template, never written into the file.
+
 ## Layout
 
 ```
@@ -95,6 +117,7 @@ home/
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_gitconfig.tmpl        -> ~/.gitconfig
   dot_config/starship.toml  -> ~/.config/starship.toml
+  dot_claude/settings.json  -> ~/.claude/settings.json
 ```
 
 ## Secrets
