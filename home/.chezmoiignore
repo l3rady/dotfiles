@@ -26,4 +26,6 @@
 {{- $bwUnlocked := and (env "BW_SESSION") (lookPath "bw") (eq (output "bw" "status" | fromJson).status "unlocked") }}
 {{- if not $bwUnlocked }}
 .config/sops/age/keys.txt
+.cloudflared/cert.pem
+.cloudflared/credentials.json
 {{- end }}

@@ -157,6 +157,8 @@ needed when a secret has changed or on a new machine.
 | File | Comes from |
 |---|---|
 | `~/.config/sops/age/keys.txt` | Bitwarden secure note "age private key" (used by `sops`) |
+| `~/.cloudflared/cert.pem` | Bitwarden secure note "Cloudflare Tunnel Cert" |
+| `~/.cloudflared/credentials.json` | Bitwarden secure note "Cloudflare Tunnel Credentials" |
 
 To add another: create the template under `home/`, read the item with the
 `bitwarden` function, and add the target to the locked-vault block in
