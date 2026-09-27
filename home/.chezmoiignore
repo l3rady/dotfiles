@@ -19,8 +19,11 @@
 .claude/skills/synced
 .claude/plugins
 
-# Files built from Bitwarden are skipped unless bw is unlocked (BW_SESSION set).
-# Skipping (rather than rendering empty) stops chezmoi deleting them while locked.
-{{- if not (env "BW_SESSION") }}
+# Files built from Bitwarden are skipped unless the vault is really unlocked.
+# BW_SESSION alone isn't enough: a stale session makes bw prompt for the master
+# password. `bw status` never prompts. Skipping (rather than rendering empty)
+# also stops chezmoi deleting these files while the vault is locked.
+{{- $bwUnlocked := and (env "BW_SESSION") (lookPath "bw") (eq (output "bw" "status" | fromJson).status "unlocked") }}
+{{- if not $bwUnlocked }}
 .config/sops/age/keys.txt
 {{- end }}

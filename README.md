@@ -148,8 +148,11 @@ doesn't help once it's been public.
 ### Where secrets live instead
 
 Secrets stay in Bitwarden and are written out by chezmoi only while the vault
-is unlocked (`BW_SESSION` set). While it's locked, those files are skipped
-rather than emptied, so `chezmoi apply` never deletes them.
+is unlocked (checked with `bw status`, which never prompts). While it's locked,
+or `BW_SESSION` holds an old session key, those files are skipped rather than
+emptied, so `chezmoi apply` never deletes them and never asks for the master
+password. Unlocking again (`export BW_SESSION="$(bw unlock --raw)"`) is only
+needed when a secret has changed or on a new machine.
 
 | File | Comes from |
 |---|---|
