@@ -1,0 +1,5 @@
+# Belt and braces: never commit anything that looks like a secret
+*.local
+.env
+*.key
+*.pem

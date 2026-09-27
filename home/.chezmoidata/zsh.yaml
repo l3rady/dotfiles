@@ -1,0 +1,13 @@
+omz:
+  # Plugins bundled with oh-my-zsh: just list their names.
+  plugins:
+    - git
+    # TODO: your oh-my-zsh plugins go here
+
+  # Third-party plugins, downloaded into ~/.oh-my-zsh/custom/plugins.
+  # Order matters: zsh-syntax-highlighting should stay last.
+  custom_plugins:
+    - name: zsh-autosuggestions
+      repo: https://github.com/zsh-users/zsh-autosuggestions
+    - name: zsh-syntax-highlighting
+      repo: https://github.com/zsh-users/zsh-syntax-highlighting

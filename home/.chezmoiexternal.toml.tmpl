@@ -1,0 +1,15 @@
+# Downloaded by chezmoi, refreshed weekly (`chezmoi apply --refresh-externals` forces it).
+[".oh-my-zsh"]
+    type = "archive"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/HEAD.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "168h"
+{{ range .omz.custom_plugins }}
+[".oh-my-zsh/custom/plugins/{{ .name }}"]
+    type = "archive"
+    url = "{{ .repo }}/archive/HEAD.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "168h"
+{{ end -}}

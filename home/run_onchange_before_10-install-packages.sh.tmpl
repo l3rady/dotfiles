@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Generated from .chezmoidata/packages.yaml. chezmoi re-runs this whenever
+# the rendered script changes, i.e. whenever you edit a package list.
+set -euo pipefail
+
+{{ if .packages.docker -}}
+# Docker's apt repository (https://docs.docker.com/engine/install/ubuntu/)
+if [ ! -f /etc/apt/sources.list.d/docker.sources ]; then
+  echo "==> Adding Docker's apt repository"
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+  sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<DOCKER
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+DOCKER
+fi
+{{ end -}}
+
+echo "==> apt"
+sudo apt-get update
+sudo apt-get install -y {{ concat .packages.apt .packages.docker | join " " }}
+
+{{ if .packages.docker -}}
+# Run docker without sudo (takes effect in a new login shell)
+if ! id -nG "$USER" | grep -qw docker; then
+  sudo usermod -aG docker "$USER"
+fi
+{{- if .isWSL }}
+# Docker's daemon needs systemd, which WSL only starts when asked to
+if ! grep -qs '^systemd *= *true' /etc/wsl.conf; then
+  printf '[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf >/dev/null
+  echo "!! Enabled systemd in /etc/wsl.conf: run 'wsl --shutdown' in Windows, then reopen Ubuntu"
+fi
+{{- end }}
+{{ end -}}
+
+BREW=/home/linuxbrew/.linuxbrew/bin/brew
+if [ ! -x "$BREW" ]; then
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+eval "$("$BREW" shellenv)"
+
+{{ range .packages.taps -}}
+brew tap {{ . | quote }}
+brew trust --tap {{ . | quote }}
+{{ end }}
+echo "==> brew bundle"
+# One missing package shouldn't stop the rest of the setup
+brew bundle --file=- <<'BREWFILE' || echo "!! Some brew packages failed (see above). Fix packages.yaml, then run: chezmoi apply"
+{{ range .packages.brew -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ range .packages.casks -}}
+cask {{ . | quote }}
+{{ end -}}
+BREWFILE

@@ -1,0 +1,93 @@
+# Package lists. Edit, commit, then run `chezmoi apply` and the
+# install script re-runs automatically because its contents changed.
+packages:
+  # Third-party Homebrew taps. Homebrew only loads formulae from taps you
+  # have trusted, so every tap used below (owner/tap/name) must be listed here.
+  taps:
+    - siderolabs/tap
+    - jesseduffield/lazydocker
+    - anomalyco/tap
+
+  # Installed with Homebrew on Linux. Preferred for everything brew has.
+  brew:
+    # core tools
+    - chezmoi
+    - starship
+    - gh
+    - git
+    - git-lfs
+    - git-sizer
+    - git-filter-repo
+    - git-svn
+    - gitleaks
+    - gnupg              # provides gpg
+    - grep
+    - gzip
+    - zip
+    - unzip
+    - sevenzip
+    - wget
+    - file-formula
+    - dos2unix
+    - socat
+    - xsel
+    - htop
+    - ncdu
+    - bat
+    - fzf
+    - jq
+    - yq
+    - sqlite             # provides sqlite3
+    - stow
+    # languages and runtimes
+    - uv
+    - volta
+    - tfenv
+    # cloud and kubernetes
+    - awscli
+    - azure-cli
+    - kubernetes-cli     # provides kubectl
+    - siderolabs/tap/talosctl
+    - k9s
+    - terraform-docs
+    - terragrunt
+    - tfsort
+    - trivy
+    - ratchet
+    # containers
+    - jesseduffield/lazydocker/lazydocker
+    # data and documents
+    - csvkit
+    - exiftool
+    - graphviz
+    - imagemagick
+    - ocrmypdf
+    - pandoc
+    - poppler
+    - pgloader
+    # AI coding tools
+    - anomalyco/tap/opencode
+    - herdr
+
+  # Homebrew casks (tested working on Linux with Homebrew 7).
+  casks:
+    - codex
+
+  # Installed with apt. Only for things brew doesn't carry
+  # or that must be system packages.
+  apt:
+    - zsh                # login shell has to be in /etc/shells
+    - cifs-utils         # kernel mount helper for SMB shares
+    - python-is-python3
+
+  # Installed with apt from Docker's own repository (added automatically).
+  docker:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+
+# Deliberately not listed:
+# - zsh-autosuggestions, zsh-syntax-highlighting: loaded as oh-my-zsh plugins (zsh.yaml)
+# - vscode-server: VS Code installs it itself the first time you run `code .` in WSL

@@ -1,0 +1,27 @@
+# Managed by chezmoi. Edit with `chezmoi edit ~/.zshrc`, not directly.
+# Machine-specific or secret settings go in ~/.zshrc.local (not tracked).
+
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME=""  # starship draws the prompt
+plugins=(
+{{- range .omz.plugins }}
+  {{ . }}
+{{- end }}
+{{- range .omz.custom_plugins }}
+  {{ .name }}
+{{- end }}
+)
+source "$ZSH/oh-my-zsh.sh"
+
+export EDITOR=vim
+{{- if .isWSL }}
+
+# WSL: open links in the Windows browser
+export BROWSER="/mnt/c/Windows/explorer.exe"
+{{- end }}
+
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+eval "$(starship init zsh)"

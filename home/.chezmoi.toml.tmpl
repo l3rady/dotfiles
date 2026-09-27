@@ -1,0 +1,11 @@
+{{- /* Asked once on first run, then remembered in ~/.config/chezmoi/chezmoi.toml (never committed). */ -}}
+{{- $name := promptStringOnce . "name" "Your name for git commits" -}}
+{{- $email := promptStringOnce . "email" "Your email for git commits" -}}
+{{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+
+sourceDir = {{ .chezmoi.workingTree | quote }}
+
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
+    isWSL = {{ $isWSL }}
