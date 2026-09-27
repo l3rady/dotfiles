@@ -5,6 +5,10 @@
 
 sourceDir = {{ .chezmoi.workingTree | quote }}
 
+[add]
+    # Refuse to `chezmoi add` a file that looks like it contains a secret
+    secrets = "error"
+
 [data]
     name = {{ $name | quote }}
     email = {{ $email | quote }}

@@ -1,5 +1,31 @@
-# Belt and braces: never commit anything that looks like a secret
+# Last line of defence: files that should never be committed, even by accident.
+# The gitleaks pre-commit hook catches secrets inside files that aren't listed here.
+
+# Local, machine-specific overrides
 *.local
 .env
+.env.*
+
+# Keys and certificates
+id_rsa*
+id_ecdsa*
+id_ed25519*
 *.key
 *.pem
+*.p12
+*.pfx
+*.kdbx
+
+# Cloud and tool credentials
+.aws/credentials
+.azure/
+.kube/config
+*kubeconfig*
+talosconfig
+*.tfvars
+*.tfstate*
+.npmrc
+.pypirc
+.netrc
+.git-credentials
+hosts.yml

@@ -92,6 +92,24 @@ home/
 
 ## Secrets
 
+This repo is safe to make public because secrets never go into it.
+
+### What stops a secret being committed
+
+| Layer | What it does |
+|---|---|
+| `.githooks/pre-commit` | Runs `gitleaks` on every commit and blocks it if anything looks like a key, token or password. `install.sh` switches it on (`core.hooksPath`). |
+| chezmoi `add.secrets = "error"` | `chezmoi add` refuses a file that contains a secret, so it never reaches the repo in the first place. |
+| `.gitignore` | Blocks known credential files (SSH keys, `.env`, kubeconfig, talosconfig, `*.tfvars`, ...) even if you try to `git add` them. |
+| GitHub push protection | GitHub scans pushes to public repos and rejects known token formats. |
+
+To scan the whole history by hand: `chezmoi cd && gitleaks git --redact`.
+
+If a secret ever does get pushed, **rotate it first**. Removing it from git
+doesn't help once it's been public.
+
+### Where secrets live instead
+
 Secrets stay in Bitwarden. Two options, simplest first:
 
 - **Local file:** put tokens and exports in `~/.zshrc.local`. It's sourced by

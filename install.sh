@@ -20,6 +20,9 @@ eval "$("$BREW_PREFIX/bin/brew" shellenv)"
 
 command -v chezmoi >/dev/null || brew install chezmoi
 
+# Scan every commit to this repo for secrets (see .githooks/pre-commit)
+git -C "$DOTFILES_DIR" config core.hooksPath .githooks
+
 echo "==> Applying dotfiles from $DOTFILES_DIR"
 chezmoi init --apply --source "$DOTFILES_DIR"
 
