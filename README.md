@@ -6,7 +6,7 @@ Shell is zsh + oh-my-zsh with the starship prompt. No secrets live in this repo.
 
 ## Fresh machine
 
-Everything below "Step 3" is automated. Steps 1 and 2 are the only manual work.
+Steps 1 and 2 are the only manual work; the rest is one command.
 
 ### Step 1: Install Ubuntu in WSL (Windows)
 
@@ -19,44 +19,52 @@ wsl --install -d Ubuntu
 Reboot if asked, then open **Ubuntu** from the Start menu and create your
 Linux username and password. You'll need that password during the install.
 
-### Step 2: Prerequisites (Ubuntu)
-
-A fresh Ubuntu image normally has `git` and `curl` already; this makes sure:
+### Step 2: Install everything
 
 ```sh
-sudo apt-get update && sudo apt-get install -y git curl
+sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --apply l3rady
 ```
 
-The repo is public, so cloning over HTTPS needs no login. (There's no `gh` or
-SSH key on a fresh machine yet; `gh auth login` comes at the end.)
+This downloads chezmoi, clones this repo into `~/.local/share/chezmoi` and
+applies it. The only prerequisite is `curl`, which Ubuntu already has; the repo
+is public, so no GitHub login is needed.
 
-### Step 3: Clone and bootstrap
+It asks for your `sudo` password (apt needs it) and for your git name and email
+once (stored locally, not in the repo). It then:
 
-```sh
-git clone https://github.com/l3rady/dotfiles ~/.local/share/chezmoi
-bash ~/.local/share/chezmoi/install.sh
-```
-
-`install.sh` asks for your `sudo` password (apt needs it) and for your git name
-and email once (stored locally, not in the repo). It then:
-
-1. installs the apt packages Homebrew needs, then Homebrew itself,
-2. installs chezmoi and runs `chezmoi init --apply`, which
-3. adds Docker's apt repository and installs the apt + Docker packages,
-4. trusts the third-party taps and installs everything else with brew,
-5. downloads oh-my-zsh and the plugins in `home/.chezmoidata/zsh.yaml`,
-6. writes `~/.zshrc`, `~/.gitconfig` and `~/.config/starship.toml`,
-7. makes zsh your login shell and adds you to the `docker` group.
+1. adds Docker's apt repository and installs the apt packages, including the
+   ones Homebrew needs,
+2. installs Homebrew, trusts the third-party taps and installs everything else
+   with brew (chezmoi included, which takes over from the downloaded copy),
+3. downloads oh-my-zsh and the plugins in `home/.chezmoidata/zsh.yaml`,
+4. writes `~/.zshrc`, `~/.gitconfig` and `~/.config/starship.toml`,
+5. switches on the secret-scanning git hook for this repo,
+6. makes zsh your login shell and adds you to the `docker` group.
 
 The Homebrew step takes a while. If a single brew package fails, the rest
 still install and you'll see a `!!` warning; fix the list and run `chezmoi apply`.
 
-### Step 4: Finish up
+<details>
+<summary>Alternative: clone first, then run install.sh</summary>
+
+Does the same thing, if you'd rather see the code before running it:
+
+```sh
+sudo apt-get update && sudo apt-get install -y git curl
+git clone https://github.com/l3rady/dotfiles ~/.local/share/chezmoi
+bash ~/.local/share/chezmoi/install.sh
+```
+
+</details>
+
+### Step 3: Finish up
 
 - Close the terminal and open a new one so zsh, starship and the `docker`
   group take effect.
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
+- Optional: `rm ~/.local/bin/chezmoi` to remove the bootstrap copy (Homebrew's
+  copy is the one that gets updated).
 - Run `gh auth login`, then clone your projects.
 
 ## Day to day
@@ -74,7 +82,7 @@ still install and you'll see a `!!` warning; fix the list and run `chezmoi apply
 ## Layout
 
 ```
-install.sh                  one-shot bootstrap for a fresh machine
+install.sh                  bootstrap from an existing clone (alternative to the one-liner)
 .chezmoiroot                tells chezmoi the dotfiles live in home/
 home/
   .chezmoi.toml.tmpl        first-run prompts (name, email) and WSL detection
@@ -83,6 +91,7 @@ home/
     zsh.yaml                oh-my-zsh plugins
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
+  run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
   run_once_after_90-set-login-shell.sh
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_gitconfig.tmpl        -> ~/.gitconfig
@@ -97,7 +106,7 @@ This repo is safe to make public because secrets never go into it.
 
 | Layer | What it does |
 |---|---|
-| `.githooks/pre-commit` | Runs `gitleaks` on every commit and blocks it if anything looks like a key, token or password. `install.sh` switches it on (`core.hooksPath`). |
+| `.githooks/pre-commit` | Runs `gitleaks` on every commit and blocks it if anything looks like a key, token or password. chezmoi switches it on (`core.hooksPath`) during install. |
 | chezmoi `add.secrets = "error"` | `chezmoi add` refuses a file that contains a secret, so it never reaches the repo in the first place. |
 | `.gitignore` | Blocks known credential files (SSH keys, `.env`, kubeconfig, talosconfig, `*.tfvars`, ...) even if you try to `git add` them. |
 | GitHub push protection | GitHub scans pushes to public repos and rejects known token formats. |

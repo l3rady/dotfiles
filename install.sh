@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Bootstrap a fresh Ubuntu (WSL) install:
+# Bootstrap from an existing clone. The quick install in the README does the
+# same thing without cloning first:
 #   git clone https://github.com/l3rady/dotfiles ~/.local/share/chezmoi
 #   bash ~/.local/share/chezmoi/install.sh
 # Safe to re-run: every step checks before it acts.
@@ -19,9 +20,6 @@ fi
 eval "$("$BREW_PREFIX/bin/brew" shellenv)"
 
 command -v chezmoi >/dev/null || brew install chezmoi
-
-# Scan every commit to this repo for secrets (see .githooks/pre-commit)
-git -C "$DOTFILES_DIR" config core.hooksPath .githooks
 
 echo "==> Applying dotfiles from $DOTFILES_DIR"
 chezmoi init --apply --source "$DOTFILES_DIR"

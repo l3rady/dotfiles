@@ -76,6 +76,13 @@ packages:
   # Installed with apt. Only for things brew doesn't carry
   # or that must be system packages.
   apt:
+    # Homebrew's own prerequisites (installed before Homebrew)
+    - build-essential
+    - procps
+    - curl
+    - file
+    - git
+    # System packages
     - zsh                # login shell has to be in /etc/shells
     - cifs-utils         # kernel mount helper for SMB shares
     - python-is-python3

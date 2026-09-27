@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Scan every commit to the dotfiles repo for secrets (see .githooks/pre-commit)
+set -euo pipefail
+git -C {{ .chezmoi.workingTree | quote }} config core.hooksPath .githooks
