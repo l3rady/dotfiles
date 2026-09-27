@@ -27,14 +27,13 @@ A fresh Ubuntu image normally has `git` and `curl` already; this makes sure:
 sudo apt-get update && sudo apt-get install -y git curl
 ```
 
-You also need a way to clone this repo. There's no `gh` or SSH key yet on a
-fresh machine, so if the repo is private, clone over HTTPS and enter a GitHub
-personal access token (kept in Bitwarden) when git asks for a password.
+The repo is public, so cloning over HTTPS needs no login. (There's no `gh` or
+SSH key on a fresh machine yet; `gh auth login` comes at the end.)
 
 ### Step 3: Clone and bootstrap
 
 ```sh
-git clone https://github.com/<you>/dotfiles ~/.local/share/chezmoi
+git clone https://github.com/l3rady/dotfiles ~/.local/share/chezmoi
 bash ~/.local/share/chezmoi/install.sh
 ```
 

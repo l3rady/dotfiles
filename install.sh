@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bootstrap a fresh Ubuntu (WSL) install:
-#   git clone https://github.com/<you>/dotfiles ~/.local/share/chezmoi
+#   git clone https://github.com/l3rady/dotfiles ~/.local/share/chezmoi
 #   bash ~/.local/share/chezmoi/install.sh
 # Safe to re-run: every step checks before it acts.
 set -euo pipefail
