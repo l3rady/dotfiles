@@ -72,6 +72,7 @@ packages:
   # Homebrew casks (tested working on Linux with Homebrew 7).
   casks:
     - codex
+    - claude-code@latest # tracks the latest release; claude-code is the stable channel
 
   # Installed with apt. Only for things brew doesn't carry
   # or that must be system packages.
