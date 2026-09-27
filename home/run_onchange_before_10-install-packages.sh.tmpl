@@ -58,3 +58,9 @@ brew {{ . | quote }}
 cask {{ . | quote }}
 {{ end -}}
 BREWFILE
+
+# The one-line install leaves a bootstrap chezmoi in ~/.local/bin. Homebrew's
+# copy replaces it (and gets updated), so remove the bootstrap one.
+if brew list --formula chezmoi >/dev/null 2>&1; then
+  rm -f "$HOME/.local/bin/chezmoi"
+fi

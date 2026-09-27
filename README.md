@@ -26,8 +26,9 @@ sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --app
 ```
 
 This downloads chezmoi, clones this repo into `~/.local/share/chezmoi` and
-applies it. The only prerequisite is `curl`, which Ubuntu already has; the repo
-is public, so no GitHub login is needed.
+applies it. It needs `curl` and `git`, which the WSL Ubuntu image already has
+(if not: `sudo apt-get update && sudo apt-get install -y curl git`). The repo is
+public, so no GitHub login is needed.
 
 It asks for your `sudo` password (apt needs it) and for your git name and email
 once (stored locally, not in the repo). It then:
@@ -63,8 +64,6 @@ bash ~/.local/share/chezmoi/install.sh
   group take effect.
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
-- Optional: `rm ~/.local/bin/chezmoi` to remove the bootstrap copy (Homebrew's
-  copy is the one that gets updated).
 - Run `gh auth login`, then clone your projects.
 
 ## Day to day
