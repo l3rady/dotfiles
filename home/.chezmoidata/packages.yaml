@@ -38,6 +38,10 @@ packages:
     - jq
     - yq
     - sqlite             # provides sqlite3
+    # secrets
+    - bitwarden-cli      # provides bw
+    - sops
+    - age
     - stow
     # languages and runtimes
     - uv

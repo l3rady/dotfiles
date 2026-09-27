@@ -18,3 +18,9 @@
 .claude/downloads
 .claude/skills/synced
 .claude/plugins
+
+# Files built from Bitwarden are skipped unless bw is unlocked (BW_SESSION set).
+# Skipping (rather than rendering empty) stops chezmoi deleting them while locked.
+{{- if not (env "BW_SESSION") }}
+.config/sops/age/keys.txt
+{{- end }}

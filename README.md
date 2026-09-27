@@ -65,6 +65,13 @@ bash ~/.local/share/chezmoi/install.sh
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
 - Run `gh auth login`, then clone your projects.
+- Pull secrets from Bitwarden (skipped during the first install because the
+  vault is locked):
+  ```sh
+  bw login                               # once per machine
+  export BW_SESSION="$(bw unlock --raw)"
+  chezmoi apply
+  ```
 
 ## Day to day
 
@@ -140,12 +147,24 @@ doesn't help once it's been public.
 
 ### Where secrets live instead
 
-Secrets stay in Bitwarden. Two options, simplest first:
+Secrets stay in Bitwarden and are written out by chezmoi only while the vault
+is unlocked (`BW_SESSION` set). While it's locked, those files are skipped
+rather than emptied, so `chezmoi apply` never deletes them.
+
+| File | Comes from |
+|---|---|
+| `~/.config/sops/age/keys.txt` | Bitwarden secure note "age private key" (used by `sops`) |
+
+To add another: create the template under `home/`, read the item with the
+`bitwarden` function, and add the target to the locked-vault block in
+`home/.chezmoiignore`.
+
+For anything else, two options, simplest first:
 
 - **Local file:** put tokens and exports in `~/.zshrc.local`. It's sourced by
   `.zshrc` and never tracked.
-- **Pulled from Bitwarden at apply time:** add `bitwarden-cli` to the brew list,
-  run `bw login` and `export BW_SESSION="$(bw unlock --raw)"`, then reference
+- **Pulled from Bitwarden at apply time:** run `bw login` and
+  `export BW_SESSION="$(bw unlock --raw)"`, then reference
   items in any template, for example in `home/private_dot_config/gh/private_hosts.yml.tmpl`:
   ```
   {{ (bitwarden "item" "GitHub token").login.password }}
