@@ -33,3 +33,6 @@ hosts.yml
 # Claude Code login and state
 .credentials.json
 *claude.json
+
+# Terraform login tokens
+credentials.tfrc.json

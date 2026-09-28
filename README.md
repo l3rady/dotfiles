@@ -125,6 +125,7 @@ home/
   dot_gitconfig.tmpl        -> ~/.gitconfig
   dot_config/starship.toml  -> ~/.config/starship.toml
   dot_claude/settings.json  -> ~/.claude/settings.json
+  dot_config/terraform/dot_terraformrc  -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE)
 ```
 
 ## Secrets

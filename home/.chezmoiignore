@@ -19,6 +19,9 @@
 .claude/skills/synced
 .claude/plugins
 
+# Terraform: `terraform login` API tokens
+.terraform.d/credentials.tfrc.json
+
 # Files built from Bitwarden are skipped unless the vault is really unlocked.
 # BW_SESSION alone isn't enough: a stale session makes bw prompt for the master
 # password. `bw status` never prompts. Skipping (rather than rendering empty)
