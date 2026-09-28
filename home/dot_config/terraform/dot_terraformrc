@@ -1,3 +1,4 @@
 # Terraform CLI config. Found via TF_CLI_CONFIG_FILE, set in ~/.zshrc.
 # Share downloaded providers between projects instead of re-downloading them.
-plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
+# Lives in ~/.cache because it's safe to delete; Terraform re-downloads.
+plugin_cache_dir = "$HOME/.cache/terraform/plugin-cache"

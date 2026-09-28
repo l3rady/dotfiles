@@ -30,7 +30,10 @@ plugins=(
 source "$ZSH/oh-my-zsh.sh"
 
 export EDITOR=nano
+# Terraform: config in ~/.config, providers cached in ~/.cache (see .terraformrc),
+# and no update check, which is what writes checkpoint files to ~/.terraform.d
 export TF_CLI_CONFIG_FILE="$HOME/.config/terraform/.terraformrc"
+export CHECKPOINT_DISABLE=1
 {{- if .isWSL }}
 
 # WSL: open links in the Windows browser, scale Linux GUI apps (WSLg)
