@@ -1,3 +1,6 @@
 {
-  "theme": "dark"
+  "theme": "dark",
+  "preferredNotifChannel": "auto",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
 }
