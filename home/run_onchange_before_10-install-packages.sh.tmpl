@@ -24,6 +24,13 @@ echo "==> apt"
 sudo apt-get update
 sudo apt-get install -y {{ concat .packages.apt .packages.docker | join " " }}
 
+{{ if .locale -}}
+# Generate the locale .zshrc uses
+if ! locale -a | grep -qix '{{ .locale | replace "UTF-8" "utf8" }}'; then
+  sudo locale-gen {{ .locale | quote }}
+fi
+{{ end -}}
+
 {{ if .packages.docker -}}
 # Run docker without sudo (takes effect in a new login shell)
 if ! id -nG "$USER" | grep -qw docker; then

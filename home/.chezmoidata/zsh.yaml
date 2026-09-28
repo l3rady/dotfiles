@@ -23,7 +23,6 @@ omz:
     - uv
     - volta
     - vscode
-    - zoxide               # sets up `z`
     - zsh-interactive-cd
 
   # Plugins that don't ship with oh-my-zsh. chezmoi downloads these into

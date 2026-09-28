@@ -1,4 +1,4 @@
-# Managed by chezmoi. Edit with `chezmoi edit ~/.zshrc`, not directly.
+# Managed by chezmoi. Edit with `zshconfig` (chezmoi edit --apply ~/.zshrc).
 # Machine-specific or secret settings go in ~/.zshrc.local (not tracked).
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -7,8 +7,21 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 # ~/.profile, which zsh doesn't read.
 export PATH="$HOME/.local/bin:$PATH"
 
+# Locale. Only set if generated, otherwise every command warns about it
+# (the install script generates it).
+if locale -a 2>/dev/null | grep -qix '{{ .locale | replace "UTF-8" "utf8" }}'; then
+  export LANG={{ .locale }} LC_ALL={{ .locale }} LANGUAGE={{ .locale }}
+fi
+
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME=""  # starship draws the prompt
+HIST_STAMPS="yyyy-mm-dd"
+# chezmoi keeps oh-my-zsh up to date (weekly), so its own updater is off
+zstyle ':omz:update' mode disabled
+
+# Extra completions (must be on fpath before oh-my-zsh runs compinit)
+fpath+=(~/.zsh/completion)
+
 plugins=(
 {{- range .omz.plugins }}
   {{ . }}
@@ -16,13 +29,25 @@ plugins=(
 )
 source "$ZSH/oh-my-zsh.sh"
 
-export EDITOR=vim
+export EDITOR=nano
 {{- if .isWSL }}
 
-# WSL: open links in the Windows browser
+# WSL: open links in the Windows browser, scale Linux GUI apps (WSLg)
 export BROWSER="/mnt/c/Windows/explorer.exe"
+export GDK_DPI_SCALE=1.5
 {{- end }}
+
+# Aliases
+alias zshconfig="chezmoi edit --apply ~/.zshrc"
+alias ohmyzsh='$EDITOR "$(chezmoi source-path)/.chezmoidata/zsh.yaml" && chezmoi apply'
+for alias_file in ~/.config/zsh/aliases/*.zsh(N); do
+  source "$alias_file"
+done
 
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
+# fzf key bindings: Ctrl-R history, Ctrl-T files, Alt-C cd, and ** completion
+source <(fzf --zsh)
 eval "$(starship init zsh)"
+# zoxide replaces cd (`cd foo` jumps to the best match). Keep this last.
+eval "$(zoxide init zsh --cmd cd)"
