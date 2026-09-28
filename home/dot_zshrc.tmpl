@@ -13,9 +13,6 @@ plugins=(
 {{- range .omz.plugins }}
   {{ . }}
 {{- end }}
-{{- range .omz.custom_plugins }}
-  {{ .name }}
-{{- end }}
 )
 source "$ZSH/oh-my-zsh.sh"
 

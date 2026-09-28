@@ -35,6 +35,8 @@ packages:
     - ncdu
     - bat
     - fzf
+    - zoxide
+    - chroma             # for the colorize zsh plugin
     - jq
     - yq
     - sqlite             # provides sqlite3
@@ -49,6 +51,7 @@ packages:
     - tfenv
     # cloud and kubernetes
     - awscli
+    - ansible
     - azure-cli
     - kubernetes-cli     # provides kubectl
     - siderolabs/tap/talosctl
@@ -91,6 +94,7 @@ packages:
     - zsh                # login shell has to be in /etc/shells
     - cifs-utils         # kernel mount helper for SMB shares
     - python-is-python3
+    - command-not-found  # handler for the command-not-found zsh plugin
 
   # Installed with apt from Docker's own repository (added automatically).
   docker:

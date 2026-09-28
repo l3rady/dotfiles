@@ -1,13 +1,37 @@
 omz:
-  # Plugins bundled with oh-my-zsh: just list their names.
+  # Every plugin to load, in load order. Order matters:
+  # - fzf-tab first (it takes over Tab completion; later plugins wrap it)
+  # - fast-syntax-highlighting near the end of the widget-wrapping plugins
   plugins:
+    - fzf-tab
     - git
-    # TODO: your oh-my-zsh plugins go here
+    - ssh-agent
+    - zsh-autosuggestions
+    - fast-syntax-highlighting
+    - ansible
+    - aws
+    - colorize             # uses chroma
+    - command-not-found
+    - common-aliases
+    - docker-compose
+    - docker
+    - dotenv
+    - npm
+    - sudo
+    - terraform
+    - ubuntu
+    - uv
+    - volta
+    - vscode
+    - zoxide               # sets up `z`
+    - zsh-interactive-cd
 
-  # Third-party plugins, downloaded into ~/.oh-my-zsh/custom/plugins.
-  # Order matters: zsh-syntax-highlighting should stay last.
+  # Plugins that don't ship with oh-my-zsh. chezmoi downloads these into
+  # ~/.oh-my-zsh/custom/plugins; list them in `plugins` above to load them.
   custom_plugins:
+    - name: fzf-tab
+      repo: https://github.com/Aloxaf/fzf-tab
     - name: zsh-autosuggestions
       repo: https://github.com/zsh-users/zsh-autosuggestions
-    - name: zsh-syntax-highlighting
-      repo: https://github.com/zsh-users/zsh-syntax-highlighting
+    - name: fast-syntax-highlighting
+      repo: https://github.com/zdharma-continuum/fast-syntax-highlighting
