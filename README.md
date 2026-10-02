@@ -64,7 +64,8 @@ bash ~/.local/share/chezmoi/install.sh
   group take effect.
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
-- Run `gh auth login`, then clone your projects.
+- Run `gh auth login`, then `chezmoi apply` again: it clones the projects
+  listed in `home/.chezmoidata/projects.yaml` into `~/Projects`.
 - Pull secrets from Bitwarden (skipped during the first install because the
   vault is locked):
   ```sh
@@ -107,6 +108,24 @@ Run `chezmoi re-add` afterwards to save the change, or the next
 `chezmoi apply` will undo it. Secrets such as API keys in `env` or MCP server
 tokens come from Bitwarden via a template, never written into the file.
 
+## Homelab (Talos + Kubernetes)
+
+- **talosctl** is pinned to the cluster's Talos version in
+  `home/.chezmoidata/talos.yaml` (Homebrew only has the latest, which can be
+  ahead of the cluster). After upgrading the cluster, update the version and
+  checksums there.
+- **`~/.talos/config`** comes from Bitwarden (see Secrets). If you change it
+  (e.g. new endpoints), paste the new version into the "Talos Config" note.
+- **`~/.kube/config`** is never stored. When it's missing, `chezmoi apply`
+  asks the cluster for an admin kubeconfig (needs `~/.talos/config` and the
+  home network), so each machine gets its own certificate.
+
+## Projects
+
+Repositories in `home/.chezmoidata/projects.yaml` are cloned into
+`~/Projects` once `gh auth login` is done. **Add new projects there** as
+`owner/name`; folders that already exist are never touched.
+
 ## Layout
 
 ```
@@ -117,9 +136,13 @@ home/
   .chezmoidata/
     packages.yaml           taps, brew, cask, apt and Docker package lists
     zsh.yaml                oh-my-zsh plugins
+    talos.yaml              pinned talosctl version + checksums
+    projects.yaml           repos to clone into ~/Projects
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
+  run_after_85-kubeconfig.sh            creates ~/.kube/config if missing
+  run_after_95-clone-projects.sh.tmpl   clones projects.yaml repos into ~/Projects
   run_once_after_90-set-login-shell.sh
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_gitconfig.tmpl        -> ~/.gitconfig
@@ -161,6 +184,7 @@ needed when a secret has changed or on a new machine.
 | `~/.config/sops/age/keys.txt` | Bitwarden secure note "age private key" (used by `sops`) |
 | `~/.cloudflared/cert.pem` | Bitwarden secure note "Cloudflare Tunnel Cert" |
 | `~/.cloudflared/credentials.json` | Bitwarden secure note "Cloudflare Tunnel Credentials" |
+| `~/.talos/config` | Bitwarden secure note "Talos Config" (talosctl admin config, with endpoints) |
 
 To add another: create the template under `home/`, read the item with the
 `bitwarden` function, and add the target to the locked-vault block in

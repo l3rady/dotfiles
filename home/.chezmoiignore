@@ -19,6 +19,9 @@
 .claude/skills/synced
 .claude/plugins
 
+# Kubernetes credentials: generated per machine, never tracked
+.kube
+
 # Terraform: `terraform login` API tokens
 .terraform.d/credentials.tfrc.json
 
@@ -31,4 +34,5 @@
 .config/sops/age/keys.txt
 .cloudflared/cert.pem
 .cloudflared/credentials.json
+.talos/config
 {{- end }}

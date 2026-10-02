@@ -1,0 +1,7 @@
+# Git repositories cloned into ~/Projects by `chezmoi apply`, once you've run
+# `gh auth login`. Add more as owner/name on new lines. Folders that already
+# exist are left alone, so this never touches work in progress.
+projects:
+  - l3rady/homelab
+  # - l3rady/ebike
+  # - l3rady/rag

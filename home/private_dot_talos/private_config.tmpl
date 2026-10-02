@@ -1,0 +1,4 @@
+{{- /* talosctl admin config (talosctl's default location), from the Bitwarden
+       secure note "Talos Config". Only rendered while Bitwarden is unlocked;
+       see .chezmoiignore. */ -}}
+{{ (bitwarden "item" "Talos Config").notes | trim }}

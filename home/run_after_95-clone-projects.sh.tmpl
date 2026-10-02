@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Clone the repositories listed in .chezmoidata/projects.yaml into ~/Projects.
+# Skips any that already exist. Never fails the apply.
+set -uo pipefail
+[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+  echo "projects: skipped cloning, run 'gh auth login' then chezmoi apply"
+  exit 0
+fi
+
+mkdir -p "$HOME/Projects"
+{{ range .projects -}}
+dest="$HOME/Projects/{{ base . }}"
+if [ ! -e "$dest" ]; then
+  gh repo clone {{ . | quote }} "$dest" -- --quiet && echo "projects: cloned {{ . }}" || echo "projects: failed to clone {{ . }}"
+fi
+{{ end -}}
+exit 0
