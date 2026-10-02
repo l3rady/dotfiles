@@ -4,7 +4,6 @@ packages:
   # Third-party Homebrew taps. Homebrew only loads formulae from taps you
   # have trusted, so every tap used below (owner/tap/name) must be listed here.
   taps:
-    - siderolabs/tap
     - jesseduffield/lazydocker
     - anomalyco/tap
 
@@ -54,7 +53,6 @@ packages:
     - ansible
     - azure-cli
     - kubernetes-cli     # provides kubectl
-    - siderolabs/tap/talosctl
     - k9s
     - terraform-docs
     - terragrunt

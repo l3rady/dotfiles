@@ -13,3 +13,10 @@
     stripComponents = 1
     refreshPeriod = "168h"
 {{ end -}}
+
+# talosctl pinned to the cluster's Talos version (see .chezmoidata/talos.yaml)
+[".local/bin/talosctl"]
+    type = "file"
+    url = "https://github.com/siderolabs/talos/releases/download/{{ .talos.version }}/talosctl-{{ .chezmoi.os }}-{{ .chezmoi.arch }}"
+    executable = true
+    checksum.sha256 = "{{ index .talos.talosctlSha256 .chezmoi.arch }}"

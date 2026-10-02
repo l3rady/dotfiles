@@ -1,0 +1,9 @@
+# Talos: talosctl must match the cluster's Talos version, so it's pinned here
+# instead of installed from Homebrew (which only has the latest release).
+# When upgrading the cluster: change the version and both checksums (from the
+# release's sha256sum.txt), then `chezmoi apply`.
+talos:
+  version: v1.12.6
+  talosctlSha256:
+    amd64: 4c41a3b10b075292e64b182283d558e9d8e935f43239de1ed4e4b14359593efb
+    arm64: 4d28254ee6ea994bbb0bca49b2047d69ccc90fa9ffb2004195143280443ada16
