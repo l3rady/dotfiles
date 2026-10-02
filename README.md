@@ -141,7 +141,7 @@ home/
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
-  run_after_85-kubeconfig.sh            creates ~/.kube/config if missing
+  run_after_85-kube-config.sh           creates ~/.kube/config if missing
   run_after_95-clone-projects.sh.tmpl   clones projects.yaml repos into ~/Projects
   run_once_after_90-set-login-shell.sh
   dot_zshrc.tmpl            -> ~/.zshrc
