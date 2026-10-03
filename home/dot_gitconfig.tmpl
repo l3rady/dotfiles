@@ -1,5 +1,65 @@
 [user]
     name = {{ .name }}
     email = {{ .email }}
+{{- $signingKey := joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub" }}
+{{- if stat $signingKey }}
+    # Sign commits and tags with the SSH key (GitHub shows them as Verified)
+    signingkey = {{ $signingKey }}
+[gpg]
+    format = ssh
+[gpg "ssh"]
+    # Lets `git log --show-signature` verify my own signatures locally
+    allowedSignersFile = ~/.config/git/allowed_signers
+[commit]
+    gpgsign = true
+[tag]
+    gpgsign = true
+{{- end }}
+
 [init]
     defaultBranch = main
+
+# --- Rebase workflow: keep history linear ---
+[pull]
+    # `git pull` rebases local commits on top of upstream instead of merging
+    rebase = true
+[rebase]
+    # Stash/unstash uncommitted work around a rebase automatically
+    autoStash = true
+    # `git commit --fixup` commits are squashed in by `git rebase -i` automatically
+    autoSquash = true
+    # Move stacked branches along when rebasing the branch below them
+    updateRefs = true
+[rerere]
+    # Remember how conflicts were resolved, so repeated rebases don't ask twice
+    enabled = true
+    autoUpdate = true
+[merge]
+    # Conflict markers also show the common ancestor, which makes them easier to resolve
+    conflictStyle = zdiff3
+
+# --- Remotes ---
+[fetch]
+    # Drop local refs to branches deleted on the remote
+    prune = true
+[push]
+    # First `git push` of a new branch sets its upstream automatically
+    autoSetupRemote = true
+    followTags = true
+
+# --- Readability ---
+[diff]
+    algorithm = histogram
+    colorMoved = default
+[branch]
+    sort = -committerdate
+[tag]
+    sort = version:refname
+[column]
+    ui = auto
+[help]
+    autocorrect = prompt
+
+[core]
+    # Store LF in the repo even if a Windows tool writes CRLF
+    autocrlf = input

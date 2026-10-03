@@ -19,6 +19,13 @@
 .claude/skills/synced
 .claude/plugins
 
+# Codex / opencode: only the shared AGENTS.md is tracked; never their logins or history
+.codex/auth.json
+.codex/sessions
+.codex/history.jsonl
+.codex/log
+.local/share/opencode
+
 # Kubernetes credentials: generated per machine, never tracked
 .kube
 

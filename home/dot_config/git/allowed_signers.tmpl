@@ -1,0 +1,6 @@
+{{- /* Public key(s) trusted for SSH-signed commits; used by git log --show-signature.
+       Empty (so not created) until ~/.ssh/id_ed25519.pub exists. */ -}}
+{{- $pub := joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub" -}}
+{{- if stat $pub }}
+{{ .email }} {{ include $pub | trim }}
+{{- end }}

@@ -86,6 +86,43 @@ bash ~/.local/share/chezmoi/install.sh
 | Commit and push | `chezmoi cd` then normal `git add/commit/push` |
 | Pull changes on another machine | `chezmoi update` |
 
+## Git
+
+`~/.gitconfig` (from `home/dot_gitconfig.tmpl`) is set up for a linear, rebase-based workflow:
+
+| Setting | Effect |
+|---|---|
+| `pull.rebase`, `rebase.autoStash` | `git pull` rebases your commits on top, stashing uncommitted work around it |
+| `rebase.autoSquash`, `rebase.updateRefs` | `--fixup` commits squash in automatically; stacked branches move with a rebase |
+| `rerere.enabled` | Remembers conflict resolutions, so repeated rebases don't ask twice |
+| `merge.conflictStyle = zdiff3` | Conflict markers include the common ancestor |
+| `push.autoSetupRemote`, `fetch.prune` | First push sets the upstream; deleted remote branches are pruned |
+| `commit.gpgsign`, `gpg.format = ssh` | Commits and tags are signed with `~/.ssh/id_ed25519` (only when that key exists) |
+
+For GitHub to show signed commits as **Verified**, the public key must also be added to
+GitHub as a *signing* key (once per key):
+
+```sh
+gh auth refresh -h github.com -s admin:ssh_signing_key
+gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(hostname) signing"
+```
+
+## AI coding assistants
+
+Personal preferences for Claude Code, Codex and opencode live in **one file**:
+`home/.chezmoitemplates/ai-instructions.md`. It covers conventional commits, branch naming
+(`feature/ABC-123-short-name`, `fix/42-short-name`), the rebase-only workflow, Homebrew-first
+installs, chezmoi, and secret handling. chezmoi writes it to each tool's global location:
+
+| Tool | File |
+|---|---|
+| Claude Code | `~/.claude/CLAUDE.md` |
+| Codex | `~/.codex/AGENTS.md` |
+| opencode | `~/.config/opencode/AGENTS.md` |
+
+Edit the shared file, then `chezmoi apply`. These are instructions only; nothing is enforced by
+git hooks.
+
 ## Claude Code
 
 Installed with Homebrew (`claude-code@latest` cask). Only hand-written config
@@ -142,6 +179,7 @@ home/
     talos.yaml              pinned talosctl version + checksums
     projects.yaml           repos to clone into ~/Projects
     claude.yaml             Claude Code settings chezmoi manages
+  .chezmoitemplates/ai-instructions.md  shared AI assistant preferences
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
