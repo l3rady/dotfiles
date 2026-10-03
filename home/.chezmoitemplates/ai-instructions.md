@@ -14,6 +14,10 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
     issue number `fix/42-null-check`. For GitHub issues, create the branch with
     `gh issue develop <number> --name <branch>` so it's linked to the issue.
   - If you don't know the ticket, ask. Don't invent one.
+- **Work is tracked in GitHub Issues and Projects** (one project per repo, e.g.
+  https://github.com/users/l3rady/projects/1 for homelab). When asked to pick up work, start
+  from the repo's open issues (`gh issue list`), move the item to In Progress, and reference the
+  issue in the branch name and the PR (`Closes #<n>`).
 - **Keep history linear: rebase, never merge the mainline into a branch.**
   - Bring a feature branch up to date with `git fetch` then `git rebase origin/main`
     (or `master`). Never merge `main`/`master` into a feature branch, not even to resolve
