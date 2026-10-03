@@ -53,6 +53,7 @@ packages:
     - ansible
     - azure-cli
     - kubernetes-cli     # provides kubectl
+    - helm
     - k9s
     - terraform-docs
     - terragrunt
