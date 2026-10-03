@@ -93,7 +93,7 @@ is tracked, so it follows me to every machine:
 
 | Tracked | Why |
 |---|---|
-| `~/.claude/settings.json` | Theme, model, permissions, hooks, status line |
+| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: theme, notifications, status line, the context-mode plugin. Other keys, such as hooks plugins add, are left alone |
 | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
 
 Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
@@ -103,10 +103,13 @@ added by accident: `~/.claude.json` (account, machine ID, project history),
 `history.jsonl` and `file-history/`. Skills and plugins synced from claude.ai
 arrive on their own.
 
-Claude Code rewrites `settings.json` when you change a setting in `/config`.
-Run `chezmoi re-add` afterwards to save the change, or the next
-`chezmoi apply` will undo it. Secrets such as API keys in `env` or MCP server
-tokens come from Bitwarden via a template, never written into the file.
+`settings.json` is **merged, not overwritten**: `dot_claude/modify_settings.json.tmpl` sets
+only the keys listed in `home/.chezmoidata/claude.yaml` and keeps everything else, so plugins
+can add their own hooks without causing drift. If you change one of those keys in Claude Code
+(`/config`), copy the new value into `claude.yaml` or the next `chezmoi apply` will put it back.
+(`chezmoi re-add` doesn't work for this file.)
+Secrets such as API keys in `env` or MCP server tokens never go in `claude.yaml`; they
+come from Bitwarden via a template.
 
 ## Homelab (Talos + Kubernetes)
 
@@ -138,6 +141,7 @@ home/
     zsh.yaml                oh-my-zsh plugins
     talos.yaml              pinned talosctl version + checksums
     projects.yaml           repos to clone into ~/Projects
+    claude.yaml             Claude Code settings chezmoi manages
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
@@ -147,7 +151,7 @@ home/
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_gitconfig.tmpl        -> ~/.gitconfig
   dot_config/starship.toml  -> ~/.config/starship.toml
-  dot_claude/settings.json  -> ~/.claude/settings.json
+  dot_claude/modify_settings.json.tmpl  merges .chezmoidata/claude.yaml into ~/.claude/settings.json
   dot_config/terraform/dot_terraformrc  -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
                             providers cached in ~/.cache/terraform, no ~/.terraform.d)
 ```

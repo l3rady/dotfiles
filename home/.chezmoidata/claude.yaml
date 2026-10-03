@@ -1,0 +1,20 @@
+# Claude Code settings managed by chezmoi. These keys are set in
+# ~/.claude/settings.json on every `chezmoi apply`; any other keys (for example
+# hooks that plugins add) are left alone. To keep a setting you changed in
+# Claude Code (/config), copy it here.
+claude:
+  settings:
+    enabledPlugins:
+      context-mode@context-mode: true
+    extraKnownMarketplaces:
+      context-mode:
+        source:
+          source: github
+          repo: mksglu/context-mode
+    theme: dark
+    preferredNotifChannel: auto
+    inputNeededNotifEnabled: true
+    agentPushNotifEnabled: true
+    statusLine:
+      type: command
+      command: node ~/.claude/plugins/marketplaces/context-mode/cli.bundle.mjs statusline

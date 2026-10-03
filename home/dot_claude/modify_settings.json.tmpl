@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# chezmoi modify script for ~/.claude/settings.json: reads the current file on
+# stdin and writes it back with the keys from .chezmoidata/claude.yaml set.
+# Keys it doesn't manage (e.g. hooks added by plugins) are kept as they are.
+import json
+import sys
+
+managed = json.loads(r'''{{ .claude.settings | toJson }}''')
+
+current = sys.stdin.read()
+try:
+    settings = json.loads(current) if current.strip() else {}
+except json.JSONDecodeError as err:
+    # Never overwrite a file we can't parse: fail the apply instead.
+    sys.exit(f"~/.claude/settings.json is not valid JSON ({err}); fix it and re-run chezmoi apply")
+
+# Only replace values whose content differs, so key order Claude Code chose
+# is kept and an unchanged file stays byte-for-byte the same.
+for key, value in managed.items():
+    if settings.get(key) != value:
+        settings[key] = value
+print(json.dumps(settings, indent=2))
