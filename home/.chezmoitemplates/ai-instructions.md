@@ -25,8 +25,11 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
   - `git pull` already rebases (`pull.rebase=true`).
   - After rebasing a branch that's already pushed, use `git push --force-with-lease`, never
     plain `--force`. Never force-push `main`/`master` or a branch someone else is working on.
-  - When integrating into the mainline, prefer rebase-and-merge or a fast-forward over a
-    merge commit, where the project allows it.
+  - Merge a PR by **fast-forwarding locally** so the signed commits land on the mainline
+    unchanged: rebase the branch onto `origin/main`, then
+    `git checkout main && git merge --ff-only <branch> && git push`. GitHub marks the PR merged.
+    Don't use GitHub's "Rebase and merge" or "Squash and merge" buttons: GitHub rewrites the
+    commits and they lose their signatures.
 - Commits are SSH-signed automatically. Don't turn signing off (`--no-gpg-sign`,
   `-c commit.gpgsign=false`) and don't skip hooks (`--no-verify`) unless I ask.
 
