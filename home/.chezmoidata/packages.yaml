@@ -89,6 +89,7 @@ packages:
     - file
     - git
     # System packages
+    - locales            # locale-gen, for the locale in system.yaml
     - zsh                # login shell has to be in /etc/shells
     - cifs-utils         # kernel mount helper for SMB shares
     - python-is-python3

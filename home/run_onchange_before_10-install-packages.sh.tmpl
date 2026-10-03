@@ -25,9 +25,17 @@ sudo apt-get update
 sudo apt-get install -y {{ concat .packages.apt .packages.docker | join " " }}
 
 {{ if .locale -}}
-# Generate the locale .zshrc uses
-if ! locale -a | grep -qix '{{ .locale | replace "UTF-8" "utf8" }}'; then
-  sudo locale-gen {{ .locale | quote }}
+# Generate the locale .zshrc uses (needs the locales package, installed above).
+# Enable it in /etc/locale.gen first, so this works whether or not locale-gen
+# accepts locale names as arguments (Ubuntu does, Debian doesn't).
+if ! locale -a 2>/dev/null | grep -qix '{{ .locale | replace "UTF-8" "utf8" }}'; then
+  echo "==> Generating locale {{ .locale }}"
+  if grep -qE '^#? *{{ .locale | replace "." "\\." }} ' /etc/locale.gen 2>/dev/null; then
+    sudo sed -i -E 's/^# *({{ .locale | replace "." "\\." }} )/\1/' /etc/locale.gen
+  else
+    echo '{{ .locale }} UTF-8' | sudo tee -a /etc/locale.gen >/dev/null
+  fi
+  sudo locale-gen
 fi
 {{ end -}}
 

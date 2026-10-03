@@ -1,6 +1,21 @@
 {
+  "enabledPlugins": {
+    "context-mode@context-mode": true
+  },
+  "extraKnownMarketplaces": {
+    "context-mode": {
+      "source": {
+        "source": "github",
+        "repo": "mksglu/context-mode"
+      }
+    }
+  },
   "theme": "dark",
   "preferredNotifChannel": "auto",
   "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "statusLine": {
+    "type": "command",
+    "command": "node ~/.claude/plugins/marketplaces/context-mode/cli.bundle.mjs statusline"
+  }
 }
