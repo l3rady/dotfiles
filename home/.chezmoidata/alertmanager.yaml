@@ -1,0 +1,10 @@
+# Alertmanager: amtool is pinned to the cluster's Alertmanager version (Homebrew
+# doesn't package Alertmanager). Check it with:
+#   kubectl -n monitoring get alertmanager -o jsonpath='{.items[0].spec.version}'
+# When the kube-prometheus-stack chart moves it: change the version and both
+# checksums (from the release's sha256sums.txt, the .tar.gz lines), then `chezmoi apply`.
+alertmanager:
+  version: v0.32.0
+  tarballSha256:
+    amd64: be72f50f6124ec53d944c0f100f8ec8108d969bade02fcc9f06a3068ff6c726f
+    arm64: 7812e12699694974f57ecc0b0400913c6c0d90190630d4332a7994a44982b1ed

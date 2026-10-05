@@ -20,3 +20,12 @@
     url = "https://github.com/siderolabs/talos/releases/download/{{ .talos.version }}/talosctl-{{ .chezmoi.os }}-{{ .chezmoi.arch }}"
     executable = true
     checksum.sha256 = "{{ index .talos.talosctlSha256 .chezmoi.arch }}"
+
+# amtool (Alertmanager CLI) pinned to the cluster's Alertmanager version
+# (see .chezmoidata/alertmanager.yaml). Extracted from the release tarball.
+[".local/bin/amtool"]
+    type = "archive-file"
+    url = "https://github.com/prometheus/alertmanager/releases/download/{{ .alertmanager.version }}/alertmanager-{{ trimPrefix "v" .alertmanager.version }}.{{ .chezmoi.os }}-{{ .chezmoi.arch }}.tar.gz"
+    path = "alertmanager-{{ trimPrefix "v" .alertmanager.version }}.{{ .chezmoi.os }}-{{ .chezmoi.arch }}/amtool"
+    executable = true
+    checksum.sha256 = "{{ index .alertmanager.tarballSha256 .chezmoi.arch }}"

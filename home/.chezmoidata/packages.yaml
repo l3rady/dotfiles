@@ -55,6 +55,9 @@ packages:
     - kubernetes-cli     # provides kubectl
     - helm
     - k9s
+    - cilium-cli         # provides cilium (status, connectivity tests)
+    - hubble             # network flow observability for Cilium
+    - prometheus         # provides promtool (rule unit tests, config checks)
     - terraform-docs
     - terragrunt
     - tfsort
