@@ -42,4 +42,5 @@
 .cloudflared/cert.pem
 .cloudflared/credentials.json
 .talos/config
+.config/zsh/secrets.zsh
 {{- end }}

@@ -227,10 +227,16 @@ needed when a secret has changed or on a new machine.
 | `~/.cloudflared/cert.pem` | Bitwarden secure note "Cloudflare Tunnel Cert" |
 | `~/.cloudflared/credentials.json` | Bitwarden secure note "Cloudflare Tunnel Credentials" |
 | `~/.talos/config` | Bitwarden secure note "Talos Config" (talosctl admin config, with endpoints) |
+| `~/.config/zsh/secrets.zsh` | Environment variables (API keys) listed in `.chezmoidata/secrets.yaml`, each from the Password field of a Bitwarden Login item. Sourced by `.zshrc`. |
 
 To add another: create the template under `home/`, read the item with the
 `bitwarden` function, and add the target to the locked-vault block in
 `home/.chezmoiignore`.
+
+**API keys as environment variables:** add `name` (the variable) and `item` (a Bitwarden
+Login item holding the key as its password) to `secretEnv` in `home/.chezmoidata/secrets.yaml`,
+unlock Bitwarden and run `chezmoi apply`. New shells export it. Currently: `UNIFI_API_KEY`
+(item "UniFi API Key").
 
 For anything else, two options, simplest first:
 

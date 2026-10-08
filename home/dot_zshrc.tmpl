@@ -48,6 +48,9 @@ for alias_file in ~/.config/zsh/aliases/*.zsh(N); do
   source "$alias_file"
 done
 
+# API keys from Bitwarden (see .chezmoidata/secrets.yaml)
+[[ -r ~/.config/zsh/secrets.zsh ]] && source ~/.config/zsh/secrets.zsh
+
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # fzf key bindings: Ctrl-R history, Ctrl-T files, Alt-C cd, and ** completion
