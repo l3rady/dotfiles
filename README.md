@@ -229,9 +229,15 @@ needed when a secret has changed or on a new machine.
 | `~/.talos/config` | Bitwarden secure note "Talos Config" (talosctl admin config, with endpoints) |
 | `~/.config/zsh/secrets.zsh` | Environment variables (API keys) listed in `.chezmoidata/secrets.yaml`, each from a Bitwarden Secure note (its text) or a Login (its Password). Sourced by `.zshrc`. |
 
-To add another: create the template under `home/`, read the item with the
-`bitwarden` function, and add the target to the locked-vault block in
-`home/.chezmoiignore`.
+To add another: create the template under `home/`, read the item with
+`{{ includeTemplate "bitwarden-secret" "Item name" }}`, and add the target to the
+locked-vault block in `home/.chezmoiignore`.
+
+**Item names must be exact and unique.** The helper (`home/.chezmoitemplates/bitwarden-secret`)
+matches the item name exactly, case included. chezmoi's own `bitwarden "item" "name"` isn't
+used because `bw get item` does a full-text search, names *and* note contents, so a note that
+merely mentions "Cloudflare Tunnel Cert" made that lookup fail with "More than one result".
+A Secure note gives its text; a Login gives its Password.
 
 **API keys as environment variables:** add `name` (the variable) and `item` (a Bitwarden
 Secure note holding the key as its text, or a Login holding it as the password) to `secretEnv` in `home/.chezmoidata/secrets.yaml`,
@@ -246,6 +252,6 @@ For anything else, two options, simplest first:
   `export BW_SESSION="$(bw unlock --raw)"`, then reference
   items in any template, for example in `home/private_dot_config/gh/private_hosts.yml.tmpl`:
   ```
-  {{ (bitwarden "item" "GitHub token").login.password }}
+  {{ includeTemplate "bitwarden-secret" "GitHub token" }}
   ```
   The repo only holds the item name; the value is fetched when you run `chezmoi apply`.
