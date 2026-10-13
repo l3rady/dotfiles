@@ -4,6 +4,14 @@
 # Claude Code (/config), copy it here.
 claude:
   settings:
+    # Opus makes the decisions; the implementer subagent runs on Sonnet
+    # (agents in dot_claude/agents/).
+    model: opus
+    modelSettings:
+      claude-opus-5-5:
+        effortLevel: medium
+      claude-sonnet-5-5:
+        effortLevel: medium
     # No Co-Authored-By trailer, PR byline or session link. The object form,
     # not `attribution: false`, so Claude Code before v2.1.281 still reads the file.
     attribution:

@@ -130,8 +130,10 @@ is tracked, so it follows me to every machine:
 
 | Tracked | Why |
 |---|---|
-| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: attribution (off), theme, notifications. Other keys, such as hooks plugins add, are left alone |
-| `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
+| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications. Other keys, such as hooks plugins add, are left alone |
+| `~/.claude/CLAUDE.md` | The shared instructions plus a Claude-only section (`dot_claude/CLAUDE.md.tmpl`) telling the main session when to use the subagents below |
+| `~/.claude/agents/` | Subagents to save usage, after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/): `implementer` (Sonnet) writes code, `scoper` (Haiku) gathers facts, `shipper` (Haiku) commits and opens PRs, `reviewer` (Opus) only for risky changes. Opus in the main session plans and reviews |
+| `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
 
 Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
 added by accident: `~/.claude.json` (account, machine ID, project history),
