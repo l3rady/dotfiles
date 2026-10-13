@@ -32,6 +32,8 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
     commits and they lose their signatures.
 - Commits are SSH-signed automatically. Don't turn signing off (`--no-gpg-sign`,
   `-c commit.gpgsign=false`) and don't skip hooks (`--no-verify`) unless I ask.
+- No AI attribution: no `Co-Authored-By` trailers or "Generated with ..." lines in commit
+  messages or pull request descriptions.
 
 ## Environment
 

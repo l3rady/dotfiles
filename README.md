@@ -130,7 +130,7 @@ is tracked, so it follows me to every machine:
 
 | Tracked | Why |
 |---|---|
-| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: theme, notifications. Other keys, such as hooks plugins add, are left alone |
+| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: attribution (off), theme, notifications. Other keys, such as hooks plugins add, are left alone |
 | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
 
 Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
