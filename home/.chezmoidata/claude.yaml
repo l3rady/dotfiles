@@ -22,3 +22,13 @@ claude:
     preferredNotifChannel: auto
     inputNeededNotifEnabled: true
     agentPushNotifEnabled: true
+  # Skill packs that only a subagent reads, kept out of ~/.claude/skills so the
+  # main session never loads them. Downloaded by .chezmoiexternal.toml.tmpl into
+  # ~/.claude/agent-skills/<name>/. To upgrade: read the upstream diff between the
+  # old and new commit (these files become agent instructions), then change the
+  # commit and the sha256 of https://github.com/<repo>/archive/<commit>.tar.gz.
+  agentSkills:
+    wordpress-security:
+      repo: wpultimatesecurity/WordPress-Security-Skills
+      commit: a0ba3ab3d524f033e2c985a771f22577b6f4bda8
+      sha256: d9df4b04ab0328454bbea2f41e546b7c66a27ab106226047045c6f085afc60ab

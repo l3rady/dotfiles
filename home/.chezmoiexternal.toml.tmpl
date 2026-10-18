@@ -29,3 +29,15 @@
     path = "alertmanager-{{ trimPrefix "v" .alertmanager.version }}.{{ .chezmoi.os }}-{{ .chezmoi.arch }}/amtool"
     executable = true
     checksum.sha256 = "{{ index .alertmanager.tarballSha256 .chezmoi.arch }}"
+
+# Skill packs read only by subagents (see claude.agentSkills in .chezmoidata/claude.yaml).
+# Pinned to a reviewed commit, verified by checksum, and kept outside ~/.claude/skills.
+{{ range $name, $pack := .claude.agentSkills }}
+[".claude/agent-skills/{{ $name }}"]
+    type = "archive"
+    url = "https://github.com/{{ $pack.repo }}/archive/{{ $pack.commit }}.tar.gz"
+    exact = true
+    stripComponents = 1
+    include = ["*/skills/**", "*/LICENSE"]
+    checksum.sha256 = "{{ $pack.sha256 }}"
+{{ end -}}
