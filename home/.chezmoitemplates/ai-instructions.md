@@ -6,7 +6,9 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
 
 - **Conventional Commits for every commit:** `type(scope)!: summary`
   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
-  - Summary in the imperative mood, lower case, no trailing period, 72 characters or fewer.
+  - Summary in the imperative mood, lower case, no trailing period.
+  - The whole first line, `type(scope)!: summary`, is 72 characters or fewer (commitlint's
+    `header-max-length` counts the type and scope too). Count it before committing.
   - The body explains *why*. Mark breaking changes with `!` and a `BREAKING CHANGE:` footer.
 - **Branch names:** `<type>/<ticket>-<short-name>`, kebab-case.
   - Types: `feature`, `fix`, `hotfix`, `chore`, `docs`, `refactor`.

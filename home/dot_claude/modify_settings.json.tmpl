@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # chezmoi modify script for ~/.claude/settings.json: reads the current file on
 # stdin and writes it back with the keys from .chezmoidata/claude.yaml set.
-# Keys it doesn't manage (e.g. hooks added by plugins) are kept as they are.
+# Keys it doesn't manage are kept as they are, and managed hooks are merged into
+# the ones already there (e.g. hooks added by plugins).
 import json
 import sys
 
@@ -17,6 +18,16 @@ except json.JSONDecodeError as err:
 # Only replace values whose content differs, so key order Claude Code chose
 # is kept and an unchanged file stays byte-for-byte the same.
 for key, value in managed.items():
+    if key == "hooks":
+        continue
     if settings.get(key) != value:
         settings[key] = value
-print(json.dumps(settings, indent=2))
+
+# Hooks are merged, not replaced: each managed entry is added to its event unless
+# an identical one is there, so hooks from plugins or /hooks stay.
+for event, entries in managed.get("hooks", {}).items():
+    current_entries = settings.setdefault("hooks", {}).setdefault(event, [])
+    for entry in entries:
+        if entry not in current_entries:
+            current_entries.append(entry)
+print(json.dumps(settings, indent=2, ensure_ascii=False))

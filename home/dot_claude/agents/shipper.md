@@ -31,7 +31,7 @@ If any check fails or anything looks unrelated, stop and report it. Do not inclu
 ## Publishing
 
 1. Stage only the files that belong to the completed task, by name. Never use `git add -A` or `git add .`.
-2. Write the commit message as a Conventional Commit: `type(scope)!: summary`, with the summary in the imperative mood, lower case, no trailing period, 72 characters or fewer. Add a body explaining *why* when the reason is not obvious from the diff. Match the scopes the repository already uses, which `git log --oneline -10` shows.
+2. Write the commit message as a Conventional Commit: `type(scope)!: summary`, with the summary in the imperative mood, lower case and no trailing period. The whole first line, type and scope included, is 72 characters or fewer: count it. If the repository has a commit check such as `make commits`, run it before pushing. Add a body explaining *why* when the reason is not obvious from the diff. Match the scopes the repository already uses, which `git log --oneline -10` shows.
 3. No attribution, Co-Authored-By or "generated with" lines.
 4. Commit. Commits are SSH-signed automatically. Never disable signing (`--no-gpg-sign`, `-c commit.gpgsign=false`). If signing fails, stop and report it.
 5. Push with `git push -u origin HEAD`. If the push is refused, stop and report it.
