@@ -5,7 +5,7 @@ model: haiku
 effort: medium
 tools: Read, Grep, Glob, Bash
 permissionMode: plan
-maxTurns: 12
+maxTurns: 25
 color: yellow
 ---
 
@@ -31,6 +31,12 @@ Rules:
 - Use `rg` for searching and `gh` for GitHub. Do not fetch GitHub pages with curl or a browser.
 - Never print or quote secret values (Bitwarden items, decrypted sops files, tokens, kubeconfigs). Report names, counts or yes/no only.
 - Every claim about the code cites a file path, and a line number or symbol where it helps. Mark anything you inferred without reading the code as an assumption.
+
+Budget and batching:
+- You have 25 turns. A turn costs the same whether it makes one tool call or six, so send every independent call in the same turn (typically 3-6).
+- In your first turn, read CLAUDE.md, the issue and its linked PRs together.
+- Locate before reading: `rg -n -C3 <symbol>` first, then read only the ranges you need. Read several files or ranges in one Bash call, for example `sed -n '1,80p' a.php; sed -n '40,120p' b.php`. Do not read whole large files.
+- Stop exploring by turn 20 and write the report. A complete report with gaps marked "not checked" is worth more than running out of turns mid-investigation.
 
 Report under these headings:
 

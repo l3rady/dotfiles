@@ -16,6 +16,7 @@ This is a standing request to use subagents. Do not wait for me to ask.
 
 - At the start of a non-trivial task whose code you do not know yet, run the `scoper` agent to collect the goal, acceptance criteria, relevant files, tests and a possible split.
 - Skip it only when you expect to read 3 or fewer files you have not already read in this session.
+- Give each scoper run one subsystem or one issue. When the task spans several, run one scoper per slice in parallel instead of handing one run a long checklist, because it has a limited turn budget.
 - A project skill's ticket-size assessment uses scoper's report and does not replace it. Data or network checks that scoper cannot run stay with the main session and must not be skipped.
 - Treat its report as input, not as a decision. It runs on a small model, so spot-check the files it names before you build a plan on them. You still own scope, architecture and any split-or-combine decision.
 - You always write the plan. When the scoper flags the task as complex, ambiguous or risky, read the key files it names yourself before planning, instead of spot-checking.
