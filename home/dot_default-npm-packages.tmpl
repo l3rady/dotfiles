@@ -1,0 +1,5 @@
+{{- /* mise installs these into every new Node version it installs. Generated
+       from packages.npm in .chezmoidata/packages.yaml. */ -}}
+{{ range .packages.npm -}}
+{{ . }}
+{{ end -}}

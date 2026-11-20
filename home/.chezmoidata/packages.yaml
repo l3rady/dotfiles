@@ -80,15 +80,22 @@ packages:
   # Homebrew casks (tested working on Linux with Homebrew 7).
   casks:
     - azure-cli          # moved from homebrew/core to a cask
-    - codex
-    - claude-code@latest # tracks the latest release; claude-code is the stable channel
+    - antigravity-cli    # provides agy (Google Antigravity); not on npm, so `brew upgrade` updates it
 
-  # Installed globally with mise (brew's mise, above) after brew, in order:
-  # node first, since npm: tools are installed with it. Each entry is a mise
-  # tool spec, written to ~/.config/mise/config.toml by `mise use --global`.
+  # Installed globally with mise (brew's mise, above) after brew. Each entry is
+  # a mise tool spec, written to ~/.config/mise/config.toml by `mise use --global`.
   mise:
     - node@lts           # latest Node LTS
-    - npm:skills         # npx skills: install agent skills (vercel-labs/skills)
+
+  # Global npm packages, installed with `npm install -g` into mise's Node after
+  # it's installed. A plain npm install (not mise's npm: backend) lets tools
+  # update themselves, e.g. `claude update`. Also written to
+  # ~/.default-npm-packages, so mise reinstalls them into each new Node version.
+  npm:
+    - "@anthropic-ai/claude-code" # provides claude
+    - "@openai/codex"    # provides codex
+    - t3                 # T3 Code (pingdotgg/t3code)
+    - skills             # npx skills: install agent skills (vercel-labs/skills)
 
   # Installed with apt. Only for things brew doesn't carry
   # or that must be system packages.

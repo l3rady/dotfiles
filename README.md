@@ -37,8 +37,8 @@ once (stored locally, not in the repo). It then:
    ones Homebrew needs,
 2. installs Homebrew, trusts the third-party taps and installs everything else
    with brew (chezmoi included, which takes over from the downloaded copy),
-3. installs the latest Node LTS and the global npm packages under `mise:`
-   with mise,
+3. installs the latest Node LTS with mise, then the global npm packages under
+   `npm:` (Claude Code, Codex, T3 Code...) with npm,
 4. downloads oh-my-zsh and the plugins in `home/.chezmoidata/zsh.yaml`,
 5. writes `~/.zshrc`, `~/.gitconfig` and `~/.config/starship.toml`,
 6. switches on the secret-scanning git hook for this repo,
@@ -127,7 +127,8 @@ git hooks.
 
 ## Claude Code
 
-Installed with Homebrew (`claude-code@latest` cask). Only hand-written config
+Installed with npm (`@anthropic-ai/claude-code`, on mise's Node), so `claude update`
+and auto-updates work. Only hand-written config
 is tracked, so it follows me to every machine:
 
 | Tracked | Why |
@@ -178,7 +179,7 @@ install.sh                  bootstrap from an existing clone (alternative to the
 home/
   .chezmoi.toml.tmpl        first-run prompts (name, email) and WSL detection
   .chezmoidata/
-    packages.yaml           taps, brew, cask, mise (Node, npm), apt and Docker package lists
+    packages.yaml           taps, brew, cask, mise (Node), npm, apt and Docker package lists
     zsh.yaml                oh-my-zsh plugins
     talos.yaml              pinned talosctl version + checksums
     projects.yaml           repos to clone into ~/Projects
@@ -186,7 +187,7 @@ home/
   .chezmoitemplates/ai-instructions.md  shared AI assistant preferences
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
-  run_onchange_after_20-install-node.sh.tmpl  Node LTS + global npm packages via mise
+  run_onchange_after_20-install-node.sh.tmpl  Node LTS via mise + global npm packages
   run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
   run_after_85-kube-config.sh           creates ~/.kube/config if missing
   run_after_95-clone-projects.sh.tmpl   clones projects.yaml repos into ~/Projects

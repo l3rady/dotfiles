@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Node (latest LTS) and global npm packages, installed globally with mise from
-# packages.mise. chezmoi re-runs this whenever that list changes; to move to a
-# newer LTS later run `mise upgrade node` (or `mise up` for everything).
+# Node (latest LTS) with mise, then global npm packages with npm. chezmoi re-runs
+# this whenever packages.mise or packages.npm changes. To move to a newer LTS
+# later run `mise upgrade node`: mise installs ~/.default-npm-packages into it.
 set -euo pipefail
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 export MISE_YES=1 # never stop to ask during chezmoi apply
+cd "$HOME"        # so mise uses the global config, not a project's
 
 if ! command -v mise >/dev/null; then
   echo "!! mise not installed (brew bundle failed?), skipping Node setup"
@@ -15,4 +16,13 @@ fi
 {{ range .packages.mise -}}
 echo "==> mise: {{ . }}"
 mise use --global {{ . | quote }}
+{{ end -}}
+
+# Into mise's Node (its global prefix is user-writable, so tools can self-update).
+# Only missing packages: installed ones keep updating themselves.
+{{ range .packages.npm -}}
+if ! mise exec -- npm ls --global --depth=0 {{ . | quote }} >/dev/null 2>&1; then
+  echo "==> npm: {{ . }}"
+  mise exec -- npm install --global {{ . | quote }}
+fi
 {{ end -}}
