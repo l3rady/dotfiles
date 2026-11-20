@@ -1,0 +1,7 @@
+# Global mise settings, managed by chezmoi. Kept out of ~/.config/mise/config.toml
+# because `mise use --global` rewrites that file ([tools], from packages.mise).
+
+[settings]
+# Read other version managers' version files, which mise ignores by default.
+# .terraform-version (tfenv's file) picks Terraform per project.
+idiomatic_version_file_enable_tools = ["terraform"]

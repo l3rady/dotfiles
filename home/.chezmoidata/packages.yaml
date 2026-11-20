@@ -46,8 +46,7 @@ packages:
     - stow
     # languages and runtimes
     - uv
-    - mise               # runtime versions (Node); replaces Volta
-    - tfenv
+    - mise               # runtime versions (Node, Terraform); replaces Volta and tfenv
     # cloud and kubernetes
     - awscli
     - ansible
@@ -86,6 +85,7 @@ packages:
   # a mise tool spec, written to ~/.config/mise/config.toml by `mise use --global`.
   mise:
     - node@lts           # latest Node LTS
+    - terraform@latest   # default; a project's .terraform-version overrides it
 
   # Global npm packages, installed with `npm install -g` into mise's Node after
   # it's installed. A plain npm install (not mise's npm: backend) lets tools
