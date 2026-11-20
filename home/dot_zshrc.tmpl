@@ -7,11 +7,6 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 # ~/.profile, which zsh doesn't read.
 export PATH="$HOME/.local/bin:$PATH"
 
-# Volta manages Node and global npm packages. Its shims go ahead of
-# Homebrew's node, which some formulae (bitwarden-cli) pull in.
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-
 # Locale. Only set if generated, otherwise every command warns about it
 # (the install script generates it).
 if locale -a 2>/dev/null | grep -qix '{{ .locale | replace "UTF-8" "utf8" }}'; then
@@ -27,6 +22,8 @@ zstyle ':omz:update' mode disabled
 # Extra completions (must be on fpath before oh-my-zsh runs compinit)
 fpath+=(~/.zsh/completion)
 
+# The mise plugin (zsh.yaml) runs `mise activate zsh`, which puts mise's Node
+# ahead of Homebrew's node (some formulae, such as bitwarden-cli, pull it in).
 plugins=(
 {{- range .omz.plugins }}
   {{ . }}

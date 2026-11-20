@@ -21,7 +21,7 @@ omz:
     - terraform
     - ubuntu
     - uv
-    - volta
+    - mise                 # activates mise (PATH for node, npm tools)
     - vscode
     - zsh-interactive-cd
 

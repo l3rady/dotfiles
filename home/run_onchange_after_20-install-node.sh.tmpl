@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
-# Node (latest LTS) and global npm packages, managed by Volta. chezmoi re-runs
-# this whenever packages.volta changes; to move to a newer LTS run
-# `volta install node`.
+# Node (latest LTS) and global npm packages, installed globally with mise from
+# packages.mise. chezmoi re-runs this whenever that list changes; to move to a
+# newer LTS later run `mise upgrade node` (or `mise up` for everything).
 set -euo pipefail
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
+export MISE_YES=1 # never stop to ask during chezmoi apply
 
-if ! command -v volta >/dev/null; then
-  echo "!! volta not installed (brew bundle failed?), skipping Node setup"
+if ! command -v mise >/dev/null; then
+  echo "!! mise not installed (brew bundle failed?), skipping Node setup"
   exit 0
 fi
 
-echo "==> volta: node (LTS)"
-volta install node
-{{- range .packages.volta }}
-volta install {{ . | quote }}
-{{- end }}
+{{ range .packages.mise -}}
+echo "==> mise: {{ . }}"
+mise use --global {{ . | quote }}
+{{ end -}}

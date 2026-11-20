@@ -46,12 +46,11 @@ packages:
     - stow
     # languages and runtimes
     - uv
-    - volta
+    - mise               # runtime versions (Node); replaces Volta
     - tfenv
     # cloud and kubernetes
     - awscli
     - ansible
-    - azure-cli
     - kubernetes-cli     # provides kubectl
     - helm
     - k9s
@@ -80,13 +79,16 @@ packages:
 
   # Homebrew casks (tested working on Linux with Homebrew 7).
   casks:
+    - azure-cli          # moved from homebrew/core to a cask
     - codex
     - claude-code@latest # tracks the latest release; claude-code is the stable channel
 
-  # Installed with Volta (brew's volta, above) after brew. Node is always the
-  # latest LTS; these are global npm packages, pinned to that Node.
-  volta:
-    - skills             # npx skills: install agent skills (vercel-labs/skills)
+  # Installed globally with mise (brew's mise, above) after brew, in order:
+  # node first, since npm: tools are installed with it. Each entry is a mise
+  # tool spec, written to ~/.config/mise/config.toml by `mise use --global`.
+  mise:
+    - node@lts           # latest Node LTS
+    - npm:skills         # npx skills: install agent skills (vercel-labs/skills)
 
   # Installed with apt. Only for things brew doesn't carry
   # or that must be system packages.
