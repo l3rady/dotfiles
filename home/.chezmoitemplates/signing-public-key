@@ -1,0 +1,11 @@
+{{- /* The public half of the SSH signing key (~/.ssh/id_ed25519.pub), or empty
+       if there's none. Pass the template data: {{ includeTemplate "signing-public-key" . }}
+       While Bitwarden is unlocked it comes from the vault, so .gitconfig turns
+       signing on in the same apply that first writes the key (chezmoi renders
+       .gitconfig before it writes ~/.ssh). While locked, the file on disk. */ -}}
+{{- if includeTemplate "bitwarden-unlocked" -}}
+{{-   includeTemplate "bitwarden-ssh-key" (dict "item" .sshKey.item "part" "publicKey") -}}
+{{- else -}}
+{{-   $pub := joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub" -}}
+{{-   if stat $pub }}{{ include $pub | trim }}{{ end -}}
+{{- end -}}

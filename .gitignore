@@ -10,6 +10,8 @@
 id_rsa*
 id_ecdsa*
 id_ed25519*
+# ...except chezmoi's template for it, which only holds a Bitwarden lookup
+!home/private_dot_ssh/id_ed25519.pub.tmpl
 *.key
 *.pem
 *.p12

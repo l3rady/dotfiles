@@ -2,7 +2,8 @@
     name = {{ .name }}
     email = {{ .email }}
 {{- $signingKey := joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub" }}
-{{- if stat $signingKey }}
+{{- /* On when the key is in Bitwarden (unlocked) or already on disk */}}
+{{- if includeTemplate "signing-public-key" . }}
     # Sign commits and tags with the SSH key (GitHub shows them as Verified)
     signingkey = {{ $signingKey }}
 [gpg]

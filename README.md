@@ -231,6 +231,7 @@ needed when a secret has changed or on a new machine.
 
 | File | Comes from |
 |---|---|
+| `~/.ssh/id_ed25519`, `~/.ssh/id_ed25519.pub` | Bitwarden SSH key item "WSL SSH Key" (`sshKey.item` in `.chezmoidata/secrets.yaml`, must be ed25519). Used to log in and to sign commits: `.gitconfig` turns signing on in the same apply. |
 | `~/.config/sops/age/keys.txt` | Bitwarden secure note "age private key" (used by `sops`) |
 | `~/.cloudflared/cert.pem` | Bitwarden secure note "Cloudflare Tunnel Cert" |
 | `~/.cloudflared/credentials.json` | Bitwarden secure note "Cloudflare Tunnel Credentials" |
@@ -245,7 +246,8 @@ locked-vault block in `home/.chezmoiignore`.
 matches the item name exactly, case included. chezmoi's own `bitwarden "item" "name"` isn't
 used because `bw get item` does a full-text search, names *and* note contents, so a note that
 merely mentions "Cloudflare Tunnel Cert" made that lookup fail with "More than one result".
-A Secure note gives its text; a Login gives its Password.
+A Secure note gives its text; a Login gives its Password; an SSH key item
+(`home/.chezmoitemplates/bitwarden-ssh-key`) gives its private or public key.
 
 **API keys as environment variables:** add `name` (the variable) and `item` (a Bitwarden
 Secure note holding the key as its text, or a Login holding it as the password) to `secretEnv` in `home/.chezmoidata/secrets.yaml`,

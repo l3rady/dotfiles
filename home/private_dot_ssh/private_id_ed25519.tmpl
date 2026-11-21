@@ -1,0 +1,4 @@
+{{- /* SSH private key (login and commit signing), from the Bitwarden SSH key
+       item named in .chezmoidata/secrets.yaml (sshKey.item). Only rendered while
+       Bitwarden is unlocked; see .chezmoiignore. */ -}}
+{{ includeTemplate "bitwarden-ssh-key" (dict "item" .sshKey.item "part" "privateKey") }}

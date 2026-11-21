@@ -1,0 +1,7 @@
+{{- /* "true" when the Bitwarden vault is really unlocked, otherwise empty.
+       Use: {{ if includeTemplate "bitwarden-unlocked" }}
+       BW_SESSION alone isn't enough: a stale session makes bw prompt for the
+       master password. `bw status` never prompts. */ -}}
+{{- if and (env "BW_SESSION") (lookPath "bw") (eq (output "bw" "status" | fromJson).status "unlocked") -}}
+true
+{{- end -}}

@@ -1,0 +1,15 @@
+{{- /* One half of the ed25519 key in a Bitwarden SSH key item (type 5).
+       Use: {{ includeTemplate "bitwarden-ssh-key" (dict "item" "Item name" "part" "privateKey") }}
+       with part "privateKey" or "publicKey". Exact-name lookup: see bitwarden-item.
+       Fails unless the key is ed25519, because it's written to ~/.ssh/id_ed25519. */ -}}
+{{- $item := includeTemplate "bitwarden-item" .item | fromJson -}}
+{{- if ne (int $item.type) 5 -}}
+{{-   fail (printf "Bitwarden item %q is not an SSH key item (type %v, expected 5)" .item $item.type) -}}
+{{- end -}}
+{{- $public := dig "sshKey" "publicKey" "" $item | trim -}}
+{{- if not (hasPrefix "ssh-ed25519 " $public) -}}
+{{-   fail (printf "Bitwarden item %q is not an ed25519 key, so it can't be written to ~/.ssh/id_ed25519" .item) -}}
+{{- end -}}
+{{- $value := dig "sshKey" .part "" $item | trim -}}
+{{- if not $value }}{{ fail (printf "Bitwarden item %q has no %s" .item .part) }}{{ end -}}
+{{- $value -}}
