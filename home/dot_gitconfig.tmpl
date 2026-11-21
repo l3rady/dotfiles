@@ -47,6 +47,11 @@
     # First `git push` of a new branch sets its upstream automatically
     autoSetupRemote = true
     followTags = true
+# Push to GitHub over SSH (~/.ssh/id_ed25519), even for repos cloned over HTTPS
+# (`chezmoi init` clones this repo that way). Fetching stays on HTTPS, so a new
+# machine can still clone and pull before the SSH key is in place.
+[url "git@github.com:"]
+    pushInsteadOf = https://github.com/
 
 # --- Readability ---
 [diff]
