@@ -5,7 +5,6 @@ packages:
   # have trusted, so every tap used below (owner/tap/name) must be listed here.
   taps:
     - jesseduffield/lazydocker
-    - anomalyco/tap
 
   # Installed with Homebrew on Linux. Preferred for everything brew has.
   brew:
@@ -72,7 +71,6 @@ packages:
     - poppler
     - pgloader
     # AI coding tools
-    - anomalyco/tap/opencode
     - herdr
 
   # Homebrew casks (tested working on Linux with Homebrew 7).

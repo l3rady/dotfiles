@@ -116,7 +116,7 @@ gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(hostname) signing
 
 ## AI coding assistants
 
-Personal preferences for Claude Code, Codex and opencode live in **one file**:
+Personal preferences for Claude Code and Codex live in **one file**:
 `home/.chezmoitemplates/ai-instructions.md`. It covers conventional commits, branch naming
 (`feature/ABC-123-short-name`, `fix/42-short-name`), the rebase-only workflow, Homebrew-first
 installs, chezmoi, and secret handling. chezmoi writes it to each tool's global location:
@@ -125,7 +125,6 @@ installs, chezmoi, and secret handling. chezmoi writes it to each tool's global 
 |---|---|
 | Claude Code | `~/.claude/CLAUDE.md` |
 | Codex | `~/.codex/AGENTS.md` |
-| opencode | `~/.config/opencode/AGENTS.md` |
 
 Edit the shared file, then `chezmoi apply`. These shared instructions are not enforced by git
 hooks (Claude Code does enforce the 72-character commit header limit via its `PreToolUse` hook
@@ -225,7 +224,6 @@ home/
   dot_config/
     git/allowed_signers.tmpl  -> ~/.config/git/allowed_signers
     mise/conf.d/settings.toml -> mise settings (reads .terraform-version)
-    opencode/AGENTS.md.tmpl   -> ~/.config/opencode/AGENTS.md
     sops/private_age/         -> ~/.config/sops/age/keys.txt (from Bitwarden)
     starship.toml             -> ~/.config/starship.toml
     terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
