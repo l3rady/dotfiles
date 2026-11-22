@@ -116,7 +116,7 @@ gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(hostname) signing
 
 ## AI coding assistants
 
-Personal preferences for Claude Code and Codex live in **one file**:
+Personal preferences for Claude Code, Codex and Antigravity live in **one file**:
 `home/.chezmoitemplates/ai-instructions.md`. It covers conventional commits, branch naming
 (`feature/ABC-123-short-name`, `fix/42-short-name`), the rebase-only workflow, Homebrew-first
 installs, chezmoi, and secret handling. chezmoi writes it to each tool's global location:
@@ -125,6 +125,7 @@ installs, chezmoi, and secret handling. chezmoi writes it to each tool's global 
 |---|---|
 | Claude Code | `~/.claude/CLAUDE.md` |
 | Codex | `~/.codex/AGENTS.md` |
+| Antigravity | `~/.gemini/config/AGENTS.md` |
 
 Edit the shared file, then `chezmoi apply`. These shared instructions are not enforced by git
 hooks (Claude Code does enforce the 72-character commit header limit via its `PreToolUse` hook
@@ -221,6 +222,7 @@ home/
     agents/                 Claude Code subagents
     hooks/                  Claude Code hooks (check-commit-headers.sh)
   dot_codex/AGENTS.md.tmpl  -> ~/.codex/AGENTS.md
+  dot_gemini/config/AGENTS.md.tmpl  -> ~/.gemini/config/AGENTS.md
   dot_config/
     git/allowed_signers.tmpl  -> ~/.config/git/allowed_signers
     mise/conf.d/settings.toml -> mise settings (reads .terraform-version)

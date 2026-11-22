@@ -25,6 +25,13 @@
 .codex/history.jsonl
 .codex/log
 
+# Antigravity (Gemini): only hand-written global instructions and agents are tracked
+.gemini/antigravity-cli
+.gemini/config/config.json
+.gemini/config/projects
+.gemini/config/mcp_config.json
+.gemini/config/.migrated
+
 # Kubernetes credentials: generated per machine, never tracked
 .kube
 
