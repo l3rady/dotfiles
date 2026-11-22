@@ -29,7 +29,6 @@ packages:
     - file-formula
     - dos2unix
     - socat
-    - xsel
     - htop
     - ncdu
     - bat
@@ -44,7 +43,6 @@ packages:
     - bitwarden-cli      # provides bw
     - sops
     - age
-    - stow
     # languages and runtimes
     - uv
     - mise               # runtime versions (Node, Terraform); replaces Volta and tfenv
