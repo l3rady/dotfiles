@@ -6,7 +6,9 @@ instructions (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) where they conflict.
 ## Git workflow
 
 - **Ad-hoc work goes straight to `main`.** No branch, issue or pull request: commit on
-  `main` and push it. Only one person works here, so a branch adds nothing.
+  `main` and push it directly from the main session (do not hand off to `shipper`, which
+  stays strict and refuses commits on `main`). Only one person works here, so a branch
+  adds nothing.
 - **Branch only when working on an existing GitHub issue.** Then follow the usual flow:
   `gh issue develop <n> --name <type>/<n>-<short-name>`, a PR with `Closes #<n>`, and
   a local fast-forward merge into `main`. Don't open an issue just to get a branch name.
