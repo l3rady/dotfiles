@@ -30,8 +30,9 @@ applies it. It needs `curl` and `git`, which the WSL Ubuntu image already has
 (if not: `sudo apt-get update && sudo apt-get install -y curl git`). The repo is
 public, so no GitHub login is needed.
 
-It asks for your `sudo` password (apt needs it) and for your git name and email
-once (stored locally, not in the repo). It then:
+It asks once for your git name and email (stored locally, not in the repo),
+then for your `sudo` password (apt needs it; `chsh` near the end may prompt
+again if Homebrew takes more than 15 minutes). It then:
 
 1. adds Docker's apt repository and installs the apt packages, including the
    ones Homebrew needs,
@@ -40,13 +41,15 @@ once (stored locally, not in the repo). It then:
 3. installs the latest Node LTS and Terraform with mise (a project's
    `.terraform-version` picks its Terraform), then the global npm packages under
    `npm:` (Claude Code, Codex, T3 Code...) with npm,
-4. downloads oh-my-zsh and the plugins in `home/.chezmoidata/zsh.yaml`,
-5. writes `~/.zshrc`, `~/.gitconfig` and `~/.config/starship.toml`,
+4. downloads oh-my-zsh, the plugins in `home/.chezmoidata/zsh.yaml`, pinned
+   `talosctl` and `amtool`, and Claude subagent skill packs,
+5. writes `~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml` and tool configs,
 6. switches on the secret-scanning git hook for this repo,
 7. makes zsh your login shell and adds you to the `docker` group.
 
-The Homebrew step takes a while. If a single brew package fails, the rest
-still install and you'll see a `!!` warning; fix the list and run `chezmoi apply`.
+The Homebrew step takes a while. If a single brew package fails, `brew bundle`
+still tries the rest and exits with a `!!` warning; re-run `chezmoi apply` to
+retry (or fix `packages.yaml` first).
 
 <details>
 <summary>Alternative: clone first, then run install.sh</summary>
@@ -67,13 +70,14 @@ bash ~/.local/share/chezmoi/install.sh
   group take effect.
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
-- Run `gh auth login`, then `chezmoi apply` again: it clones the projects
-  listed in `home/.chezmoidata/projects.yaml` into `~/Projects`.
-- Pull secrets from Bitwarden (skipped during the first install because the
-  vault is locked):
+- Unlock Bitwarden (skipped during the first install because the vault is
+  locked) and sign in to GitHub, then run `chezmoi apply` once to write your
+  SSH signing key, secrets, Talos/kube configs, and clone the projects in
+  `home/.chezmoidata/projects.yaml` into `~/Projects`:
   ```sh
   bw login                               # once per machine
   export BW_SESSION="$(bw unlock --raw)"
+  gh auth login
   chezmoi apply
   ```
 
@@ -123,8 +127,9 @@ installs, chezmoi, and secret handling. chezmoi writes it to each tool's global 
 | Codex | `~/.codex/AGENTS.md` |
 | opencode | `~/.config/opencode/AGENTS.md` |
 
-Edit the shared file, then `chezmoi apply`. These are instructions only; nothing is enforced by
-git hooks.
+Edit the shared file, then `chezmoi apply`. These shared instructions are not enforced by git
+hooks (Claude Code does enforce the 72-character commit header limit via its `PreToolUse` hook
+below).
 
 ## Claude Code
 
@@ -134,9 +139,11 @@ is tracked, so it follows me to every machine:
 
 | Tracked | Why |
 |---|---|
-| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications. Other keys, such as hooks plugins add, are left alone |
+| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications, and managed hooks. Other keys, such as hooks plugins add, are left alone |
 | `~/.claude/CLAUDE.md` | The shared instructions plus a Claude-only section (`dot_claude/CLAUDE.md.tmpl`) telling the main session when to use the subagents below |
-| `~/.claude/agents/` | Subagents to save usage, after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/): `implementer` (Sonnet) writes code, `scoper` (Haiku) gathers facts, `shipper` (Haiku) commits and opens PRs, `reviewer` (Opus) only for risky changes. Opus in the main session plans and reviews |
+| `~/.claude/agents/` | Subagents to save usage, after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/): `implementer` (Sonnet) writes code, `scoper` (Haiku) gathers facts, `shipper` (Haiku) commits and opens PRs, `reviewer` (Opus) only for risky changes, and `wordpress-security-reviewer` (Opus, high effort) for read-only WordPress security audits. Opus in the main session plans and reviews |
+| `~/.claude/hooks/` | `check-commit-headers.sh` (`PreToolUse` Bash hook that blocks `git push` if a commit header exceeds 72 characters) |
+| `~/.claude/agent-skills/` | Pinned, checksum-verified skill packs read only by subagents (such as `wordpress-security`), kept out of `~/.claude/skills` so the main session never loads them |
 | `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
 
 Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
@@ -160,6 +167,9 @@ come from Bitwarden via a template.
   `home/.chezmoidata/talos.yaml` (Homebrew only has the latest, which can be
   ahead of the cluster). After upgrading the cluster, update the version and
   checksums there.
+- **amtool** (Alertmanager CLI) is pinned to the cluster's Alertmanager version
+  in `home/.chezmoidata/alertmanager.yaml` (Homebrew doesn't package
+  Alertmanager) and extracted to `~/.local/bin/amtool`.
 - **`~/.talos/config`** comes from Bitwarden (see Secrets). If you change it
   (e.g. new endpoints), paste the new version into the "Talos Config" note.
 - **`~/.kube/config`** is never stored. When it's missing, `chezmoi apply`
@@ -177,29 +187,53 @@ Repositories in `home/.chezmoidata/projects.yaml` are cloned into
 ```
 install.sh                  bootstrap from an existing clone (alternative to the one-liner)
 .chezmoiroot                tells chezmoi the dotfiles live in home/
+.githooks/pre-commit        gitleaks secret scan on staged commits
+AGENTS.md, CLAUDE.md        repo-level instructions for AI coding agents
 home/
-  .chezmoi.toml.tmpl        first-run prompts (name, email) and WSL detection
+  .chezmoi.toml.tmpl        first-run prompts (name, email), umask and WSL detection
+  .chezmoiignore            keeps caches, credentials and locked Bitwarden targets out of apply
+  .chezmoiexternal.toml.tmpl  oh-my-zsh + plugins, pinned talosctl/amtool, Claude agentSkills
   .chezmoidata/
-    packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt and Docker package lists
-    zsh.yaml                oh-my-zsh plugins
-    talos.yaml              pinned talosctl version + checksums
+    alertmanager.yaml       pinned amtool version + checksums
+    claude.yaml             Claude Code settings, hooks and agentSkills
+    packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt and Docker lists
     projects.yaml           repos to clone into ~/Projects
-    claude.yaml             Claude Code settings chezmoi manages
-  .chezmoitemplates/ai-instructions.md  shared AI assistant preferences
-  .chezmoiexternal.toml.tmpl  oh-my-zsh + plugin downloads
+    secrets.yaml            Bitwarden SSH key item and secret env vars
+    system.yaml             shell locale
+    talos.yaml              pinned talosctl version + checksums
+    zsh.yaml                oh-my-zsh plugins
+  .chezmoitemplates/
+    ai-instructions.md      shared AI assistant preferences
+    bitwarden-*             exact-name Bitwarden helpers and vault-unlocked check
+    signing-public-key      SSH signing key lookup (Bitwarden or ~/.ssh/id_ed25519.pub)
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
-  run_onchange_after_20-install-node.sh.tmpl  Node LTS + Terraform via mise, global npm packages
-  run_once_after_80-enable-git-hooks.sh.tmpl  turns on the gitleaks hook
-  run_after_85-kube-config.sh           creates ~/.kube/config if missing
-  run_after_95-clone-projects.sh.tmpl   clones projects.yaml repos into ~/Projects
-  run_once_after_90-set-login-shell.sh
+  run_onchange_after_20-install-node.sh.tmpl       Node LTS + Terraform via mise, global npm packages
+  run_once_after_80-enable-git-hooks.sh.tmpl       turns on the gitleaks hook
+  run_after_85-kube-config.sh                      creates ~/.kube/config if missing
+  run_once_after_90-set-login-shell.sh             sets /usr/bin/zsh as login shell
+  run_after_95-clone-projects.sh.tmpl              clones projects.yaml repos into ~/Projects
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_gitconfig.tmpl        -> ~/.gitconfig
-  dot_config/starship.toml  -> ~/.config/starship.toml
-  dot_claude/modify_settings.json.tmpl  merges .chezmoidata/claude.yaml into ~/.claude/settings.json
-  dot_config/mise/conf.d/settings.toml  -> mise settings (reads .terraform-version)
-  dot_config/terraform/dot_terraformrc  -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
-                            providers cached in ~/.cache/terraform, no ~/.terraform.d)
+  dot_default-npm-packages.tmpl  -> ~/.default-npm-packages (reinstalled by mise on Node upgrades)
+  dot_cache/terraform/plugin-cache/  creates ~/.cache/terraform/plugin-cache
+  dot_claude/
+    CLAUDE.md.tmpl          -> ~/.claude/CLAUDE.md
+    modify_settings.json.tmpl  merges .chezmoidata/claude.yaml into ~/.claude/settings.json
+    agents/                 Claude Code subagents
+    hooks/                  Claude Code hooks (check-commit-headers.sh)
+  dot_codex/AGENTS.md.tmpl  -> ~/.codex/AGENTS.md
+  dot_config/
+    git/allowed_signers.tmpl  -> ~/.config/git/allowed_signers
+    mise/conf.d/settings.toml -> mise settings (reads .terraform-version)
+    opencode/AGENTS.md.tmpl   -> ~/.config/opencode/AGENTS.md
+    sops/private_age/         -> ~/.config/sops/age/keys.txt (from Bitwarden)
+    starship.toml             -> ~/.config/starship.toml
+    terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
+                              providers cached in ~/.cache/terraform, no ~/.terraform.d)
+    zsh/private_secrets.zsh.tmpl -> ~/.config/zsh/secrets.zsh (from Bitwarden)
+  private_dot_cloudflared/  -> ~/.cloudflared/{cert.pem,credentials.json} (from Bitwarden)
+  private_dot_ssh/          -> ~/.ssh/{id_ed25519,id_ed25519.pub} (from Bitwarden)
+  private_dot_talos/        -> ~/.talos/config (from Bitwarden)
 ```
 
 ## Secrets
@@ -252,7 +286,7 @@ A Secure note gives its text; a Login gives its Password; an SSH key item
 **API keys as environment variables:** add `name` (the variable) and `item` (a Bitwarden
 Secure note holding the key as its text, or a Login holding it as the password) to `secretEnv` in `home/.chezmoidata/secrets.yaml`,
 unlock Bitwarden, run `bw sync` (new items aren't seen until then) and `chezmoi apply`. New shells export it. Currently: `UNIFI_API_KEY`
-(item "UniFi API Key").
+(item "UniFi API Key") and `GITHUB_PUBLIC_TOKEN` (item "Github Public Token").
 
 For anything else, two options, simplest first:
 
