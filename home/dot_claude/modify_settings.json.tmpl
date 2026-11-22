@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # chezmoi modify script for ~/.claude/settings.json: reads the current file on
 # stdin and writes it back with the keys from .chezmoidata/claude.yaml set.
-# Keys it doesn't manage are kept as they are, and managed hooks are merged into
-# the ones already there (e.g. hooks added by plugins).
+# Keys it doesn't manage are kept as they are, and managed hooks are reconciled
+# alongside hooks added by plugins or /hooks.
 import json
+import os
 import sys
 
 managed = json.loads(r'''{{ .claude.settings | toJson }}''')
@@ -23,11 +24,52 @@ for key, value in managed.items():
     if settings.get(key) != value:
         settings[key] = value
 
-# Hooks are merged, not replaced: each managed entry is added to its event unless
-# an identical one is there, so hooks from plugins or /hooks stay.
-for event, entries in managed.get("hooks", {}).items():
+# Managed hooks live under ~/.claude/hooks/ (from dot_claude/hooks/). Any entry
+# whose commands all come from that directory is owned by chezmoi, so edits or
+# removals in claude.yaml reconcile cleanly without touching plugin or /hooks
+# entries.
+managed_prefixes = ("~/.claude/hooks/", os.path.expanduser("~/.claude/hooks/"))
+
+
+def is_managed_hook_entry(entry):
+    if not isinstance(entry, dict):
+        return False
+    items = entry.get("hooks")
+    if not isinstance(items, list) or not items:
+        return False
+    return all(
+        isinstance(item, dict)
+        and item.get("type") == "command"
+        and isinstance(item.get("command"), str)
+        and item["command"].startswith(managed_prefixes)
+        for item in items
+    )
+
+
+managed_hooks = managed.get("hooks", {})
+existing_hooks = settings.get("hooks")
+if isinstance(existing_hooks, dict):
+    for event in list(existing_hooks.keys()):
+        entries = existing_hooks[event]
+        if not isinstance(entries, list):
+            continue
+        desired = managed_hooks.get(event, [])
+        filtered = [
+            entry for entry in entries
+            if not is_managed_hook_entry(entry) or entry in desired
+        ]
+        if filtered != entries:
+            if filtered:
+                existing_hooks[event] = filtered
+            else:
+                del existing_hooks[event]
+    if not existing_hooks and not managed_hooks:
+        del settings["hooks"]
+
+for event, entries in managed_hooks.items():
     current_entries = settings.setdefault("hooks", {}).setdefault(event, [])
     for entry in entries:
         if entry not in current_entries:
             current_entries.append(entry)
+
 print(json.dumps(settings, indent=2, ensure_ascii=False))
