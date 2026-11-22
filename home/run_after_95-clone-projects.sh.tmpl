@@ -2,6 +2,16 @@
 # Clone the repositories listed in .chezmoidata/projects.yaml into ~/Projects.
 # Skips any that already exist. Never fails the apply.
 set -uo pipefail
+
+missing=()
+{{ range .projects -}}
+if [ ! -e "$HOME/Projects/{{ base . }}" ]; then
+  missing+=({{ . | quote }})
+fi
+{{ end -}}
+
+[ "${#missing[@]}" -eq 0 ] && exit 0
+
 [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
@@ -10,10 +20,8 @@ if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
 fi
 
 mkdir -p "$HOME/Projects"
-{{ range .projects -}}
-dest="$HOME/Projects/{{ base . }}"
-if [ ! -e "$dest" ]; then
-  gh repo clone {{ . | quote }} "$dest" -- --quiet && echo "projects: cloned {{ . }}" || echo "projects: failed to clone {{ . }}"
-fi
-{{ end -}}
+for repo in "${missing[@]}"; do
+  dest="$HOME/Projects/${repo##*/}"
+  gh repo clone "$repo" "$dest" -- --quiet && echo "projects: cloned $repo" || echo "projects: failed to clone $repo"
+done
 exit 0
