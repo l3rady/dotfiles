@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# macOS-style pbcopy for WSL2, writing stdin to the Windows clipboard via clip.exe.
+set -euo pipefail
+
+exec /mnt/c/Windows/System32/clip.exe

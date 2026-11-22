@@ -32,6 +32,12 @@
 # Terraform: `terraform login` API tokens
 .terraform.d/credentials.tfrc.json
 
+# WSL-only clipboard helpers (don't shadow macOS's built-in pbcopy/pbpaste)
+{{- if not .isWSL }}
+.local/bin/pbcopy
+.local/bin/pbpaste
+{{- end }}
+
 # Files built from Bitwarden are skipped unless the vault is really unlocked
 # (see .chezmoitemplates/bitwarden-unlocked). Skipping (rather than rendering
 # empty) also stops chezmoi deleting these files while the vault is locked.

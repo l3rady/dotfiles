@@ -231,6 +231,7 @@ home/
     terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
                               providers cached in ~/.cache/terraform, no ~/.terraform.d)
     zsh/private_secrets.zsh.tmpl -> ~/.config/zsh/secrets.zsh (from Bitwarden)
+  dot_local/bin/            -> ~/.local/bin/{pbcopy,pbpaste} (WSL clipboard helpers)
   private_dot_cloudflared/  -> ~/.cloudflared/{cert.pem,credentials.json} (from Bitwarden)
   private_dot_ssh/          -> ~/.ssh/{id_ed25519,id_ed25519.pub} (from Bitwarden)
   private_dot_talos/        -> ~/.talos/config (from Bitwarden)

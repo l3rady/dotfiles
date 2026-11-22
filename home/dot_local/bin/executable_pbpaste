@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# macOS-style pbpaste for WSL2, reading the Windows clipboard with LF line endings.
+set -euo pipefail
+
+exec /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
+  -NoProfile -NonInteractive -Command \
+  '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $c = Get-Clipboard -Raw; if ($null -ne $c) { [Console]::Out.Write($c.Replace("`r`n", "`n")) }'
