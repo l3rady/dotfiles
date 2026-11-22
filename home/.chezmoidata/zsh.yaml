@@ -1,13 +1,12 @@
 omz:
   # Every plugin to load, in load order. Order matters:
   # - fzf-tab first (it takes over Tab completion; later plugins wrap it)
-  # - fast-syntax-highlighting near the end of the widget-wrapping plugins
+  # - fast-syntax-highlighting last (wraps ZLE widgets from earlier plugins)
   plugins:
     - fzf-tab
     - git
     - ssh-agent
     - zsh-autosuggestions
-    - fast-syntax-highlighting
     - ansible
     - aws
     - colorize             # uses chroma
@@ -23,7 +22,7 @@ omz:
     - uv
     - mise                 # activates mise (PATH for node, npm tools)
     - vscode
-    - zsh-interactive-cd
+    - fast-syntax-highlighting
 
   # Plugins that don't ship with oh-my-zsh. chezmoi downloads these into
   # ~/.oh-my-zsh/custom/plugins; list them in `plugins` above to load them.
