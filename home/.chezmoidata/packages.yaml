@@ -34,6 +34,7 @@ packages:
     - ncdu
     - bat
     - fzf
+    - ripgrep            # provides rg (used by Claude Code subagents)
     - zoxide
     - chroma             # for the colorize zsh plugin
     - jq
