@@ -4,6 +4,8 @@
 {{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
 
 sourceDir = {{ .chezmoi.workingTree | quote }}
+# Pin file/dir modes to 0644/0755 regardless of whether a shell uses umask 022 or Ubuntu's 002
+umask = 0o022
 
 [add]
     # Refuse to `chezmoi add` a file that looks like it contains a secret
