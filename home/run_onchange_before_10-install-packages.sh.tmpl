@@ -45,9 +45,52 @@ if ! id -nG "$USER" | grep -qw docker; then
   sudo usermod -aG docker "$USER"
 fi
 {{- if .isWSL }}
-# Docker's daemon needs systemd, which WSL only starts when asked to
-if ! grep -qs '^systemd *= *true' /etc/wsl.conf; then
-  printf '[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf >/dev/null
+# Docker's daemon needs systemd, which WSL only starts when asked to.
+# Edit [boot] in place if present so we never create duplicate [boot] sections
+# or glue onto a line without a trailing newline.
+if [ "$(sudo python3 - /etc/wsl.conf <<'PY'
+import pathlib, re, sys
+
+path = pathlib.Path(sys.argv[1])
+lines = path.read_text().splitlines(keepends=True) if path.exists() else []
+
+in_boot = False
+boot_idx = None
+systemd_idx = None
+already_true = False
+
+for i, line in enumerate(lines):
+    stripped = line.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        in_boot = stripped.lower() == "[boot]"
+        if in_boot and boot_idx is None:
+            boot_idx = i
+    elif in_boot and re.match(r"^systemd\s*=", stripped, re.IGNORECASE):
+        systemd_idx = i
+        if re.match(r"^systemd\s*=\s*true(\s*(#.*|;.*)?)?$", stripped, re.IGNORECASE):
+            already_true = True
+        break
+
+if already_true:
+    sys.exit(0)
+
+if systemd_idx is not None:
+    lines[systemd_idx] = "systemd=true\n"
+elif boot_idx is not None:
+    if not lines[boot_idx].endswith("\n"):
+        lines[boot_idx] += "\n"
+    lines.insert(boot_idx + 1, "systemd=true\n")
+else:
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    if lines and lines[-1].strip() != "":
+        lines.append("\n")
+    lines.extend(["[boot]\n", "systemd=true\n"])
+
+path.write_text("".join(lines))
+print("changed")
+PY
+)" = "changed" ]; then
   echo "!! Enabled systemd in /etc/wsl.conf: run 'wsl --shutdown' in Windows, then reopen Ubuntu"
 fi
 {{- end }}
