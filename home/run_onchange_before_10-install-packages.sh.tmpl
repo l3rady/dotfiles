@@ -64,8 +64,11 @@ brew tap {{ . | quote }}
 brew trust --tap {{ . | quote }}
 {{ end }}
 echo "==> brew bundle"
-# One missing package shouldn't stop the rest of the setup
-brew bundle --file=- <<'BREWFILE' || echo "!! Some brew packages failed (see above). Fix packages.yaml, then run: chezmoi apply"
+# brew bundle tries every entry before exiting, so one failure does not skip the rest.
+# Exit non-zero at the end if anything failed so chezmoi does not record the script as
+# done and the next `chezmoi apply` retries it.
+brew_rc=0
+brew bundle --file=- <<'BREWFILE' || brew_rc=$?
 {{ range .packages.brew -}}
 brew {{ . | quote }}
 {{ end -}}
@@ -78,4 +81,9 @@ BREWFILE
 # copy replaces it (and gets updated), so remove the bootstrap one.
 if brew list --formula chezmoi >/dev/null 2>&1; then
   rm -f "$HOME/.local/bin/chezmoi"
+fi
+
+if [ "$brew_rc" -ne 0 ]; then
+  echo "!! Some brew packages failed (see above). Re-run 'chezmoi apply' to retry (or fix packages.yaml first)." >&2
+  exit "$brew_rc"
 fi

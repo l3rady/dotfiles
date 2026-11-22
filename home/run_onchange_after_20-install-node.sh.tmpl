@@ -9,8 +9,8 @@ export MISE_YES=1 # never stop to ask during chezmoi apply
 cd "$HOME"        # so mise uses the global config, not a project's
 
 if ! command -v mise >/dev/null; then
-  echo "!! mise not installed (brew bundle failed?), skipping Node setup"
-  exit 0
+  echo "!! mise not installed (brew bundle failed?); re-run 'chezmoi apply' once mise is available" >&2
+  exit 1
 fi
 
 {{ range .packages.mise -}}
