@@ -1,0 +1,19 @@
+{{- $name := .name -}}
+{{- $role := index .root.ai.roles $name -}}
+{{- $model := index .root.ai.tiers.claude $role.tier -}}
+---
+name: {{ $name }}
+description: {{ $role.description }}
+model: {{ $model }}
+effort: {{ $role.effort }}
+tools: {{ $role.claude_tools | join ", " }}
+{{- if hasKey $role "permission_mode" }}
+permissionMode: {{ $role.permission_mode }}
+{{- end }}
+{{- if hasKey $role "max_turns" }}
+maxTurns: {{ $role.max_turns }}
+{{- end }}
+color: {{ $role.color }}
+---
+
+{{ includeTemplate (printf "agents/%s.md" $name) .root -}}

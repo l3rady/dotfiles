@@ -1,0 +1,74 @@
+# Harness-agnostic AI subagent roles and semantic model tiers.
+# Each harness renders its own native subagent files from these definitions and
+# the shared role playbooks under home/.chezmoitemplates/agents/.
+ai:
+  # Semantic model tiers mapped to each harness's vocabulary.
+  tiers:
+    claude:
+      fast: haiku
+      balanced: sonnet
+      reasoning: opus
+    antigravity:
+      # Antigravity subagent frontmatter accepts tier aliases: inherit | flash | pro.
+      # `pro` maps to the flagship tier (Gemini 4 Neon on Pro/Ultra); `flash` maps to
+      # the fast executor tier (Gemini 4 Hydrogen / Flash).
+      fast: flash
+      balanced: flash
+      reasoning: pro
+    codex:
+      # Leave empty to inherit the active Codex session model (effort is still set
+      # per role via model_reasoning_effort), or pin a Codex model ID per tier.
+      fast: ""
+      balanced: ""
+      reasoning: ""
+
+  roles:
+    implementer:
+      description: Use proactively whenever code needs to be written, modified, refactored, or tests need to be added or fixed after the task is sufficiently understood. Delegate substantial implementation work to this agent.
+      tier: balanced
+      effort: medium
+      color: green
+      claude_tools: [Read, Write, Edit, Grep, Glob, Bash]
+      antigravity_tools: [read_file, edit_file, write_file, run_command, manage_task]
+      codex_sandbox: workspace-write
+
+    reviewer:
+      description: Use only when the user asks for a code review, or when a change is risky (security, concurrency, data migrations, state machines, broad public API changes). The main session reviews routine changes itself; do not run this agent in addition to that review.
+      tier: reasoning
+      effort: medium
+      color: blue
+      claude_tools: [Read, Grep, Glob, Bash]
+      antigravity_tools: [read_file, run_command]
+      codex_sandbox: read-only
+
+    scoper:
+      description: Use at the start of a non-trivial coding task when the relevant code is unfamiliar, to gather scope, acceptance criteria, relevant code, tests and implementation boundaries before planning. Skip it only when the main session expects to read 3 or fewer files it has not already read.
+      tier: fast
+      effort: medium
+      permission_mode: plan
+      max_turns: 25
+      color: yellow
+      claude_tools: [Read, Grep, Glob, Bash]
+      antigravity_tools: [read_file, run_command]
+      codex_sandbox: read-only
+
+    shipper:
+      description: Commit, push and open or update a pull request after implementation and review are complete. Use only when the user has explicitly asked to commit, push, open a PR or ship the completed changes.
+      tier: fast
+      effort: low
+      permission_mode: default
+      max_turns: 10
+      color: purple
+      claude_tools: [Read, Bash]
+      antigravity_tools: [read_file, run_command, manage_task]
+      codex_sandbox: workspace-write
+
+    wordpress-security-reviewer:
+      description: Security review of WordPress plugin or theme code using the WordPress Security Skills pack. Use only when the user asks for a WordPress security review or audit, or as the reviewer for a security-sensitive change to a WordPress plugin or theme, in place of `reviewer` and never as well. Read-only; returns a findings report.
+      tier: reasoning
+      effort: high
+      permission_mode: plan
+      color: red
+      claude_tools: [Read, Grep, Glob, Bash]
+      antigravity_tools: [read_file, run_command]
+      codex_sandbox: read-only
