@@ -1,0 +1,14 @@
+{{- $name := .name -}}
+{{- $role := index .root.ai.roles $name -}}
+{{- $model := index .root.ai.tiers.antigravity $role.tier -}}
+---
+name: {{ $name }}
+description: {{ $role.description }}
+subagent: true
+mainAgent: false
+model: {{ $model }}
+tools: [{{ $role.antigravity_tools | join ", " }}]
+commandExecutionPolicy: sandbox
+---
+
+{{ includeTemplate (printf "agents/%s.md" $name) .root -}}

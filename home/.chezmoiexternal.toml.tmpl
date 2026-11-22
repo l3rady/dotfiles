@@ -30,10 +30,11 @@
     executable = true
     checksum.sha256 = "{{ index .alertmanager.tarballSha256 .chezmoi.arch }}"
 
-# Skill packs read only by subagents (see claude.agentSkills in .chezmoidata/claude.yaml).
-# Pinned to a reviewed commit, verified by checksum, and kept outside ~/.claude/skills.
-{{ range $name, $pack := .claude.agentSkills }}
-[".claude/agent-skills/{{ $name }}"]
+# Skill packs read only by subagents (see ai.agentSkills in .chezmoidata/ai.yaml).
+# Pinned to a reviewed commit, verified by checksum, and kept in ~/.local/share/agent-skills
+# so every harness's subagents can read them while main sessions never auto-load them.
+{{ range $name, $pack := .ai.agentSkills }}
+[".local/share/agent-skills/{{ $name }}"]
     type = "archive"
     url = "https://github.com/{{ $pack.repo }}/archive/{{ $pack.commit }}.tar.gz"
     exact = true

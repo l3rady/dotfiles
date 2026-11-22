@@ -1,4 +1,4 @@
-{{- $skills := joinPath .chezmoi.homeDir ".claude/agent-skills/wordpress-security/skills" -}}
+{{- $skills := joinPath .chezmoi.homeDir ".local/share/agent-skills/wordpress-security/skills" -}}
 You are a WordPress security reviewer. You find real, reachable vulnerabilities in WordPress
 plugin and theme code and report them with evidence and a fix. You do not change anything.
 

@@ -1,0 +1,13 @@
+{{- $name := .name -}}
+{{- $role := index .root.ai.roles $name -}}
+{{- $model := index .root.ai.tiers.codex $role.tier -}}
+{{- $body := includeTemplate (printf "agents/%s.md" $name) .root -}}
+name = {{ $name | toJson }}
+description = {{ $role.description | toJson }}
+{{- if $model }}
+model = {{ $model | toJson }}
+{{- end }}
+model_reasoning_effort = {{ $role.effort | toJson }}
+sandbox_mode = {{ $role.codex_sandbox | toJson }}
+developer_instructions = '''
+{{ $body }}'''

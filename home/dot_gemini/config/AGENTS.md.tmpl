@@ -1,2 +1,6 @@
-{{- /* Shared with Claude Code, Codex and Antigravity: edit home/.chezmoitemplates/ai-instructions.md */ -}}
+{{- /* Shared with Claude Code, Codex and Antigravity: edit home/.chezmoitemplates/ai-instructions.md and ai-delegation.md */ -}}
 {{ template "ai-instructions.md" . }}
+{{ template "ai-delegation.md" . }}
+## Antigravity note
+
+When this thread is running **Orchestrator (Neon)**, Antigravity already pairs Gemini 4 Neon (planner/reviewer) with Gemini 4 Hydrogen (executor) automatically inside a single turn, so you can skip delegating single-slice edits to `implementer` unless you want parallel or workspace-isolated execution.

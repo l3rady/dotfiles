@@ -116,20 +116,31 @@ gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(hostname) signing
 
 ## AI coding assistants
 
-Personal preferences for Claude Code, Codex and Antigravity live in **one file**:
-`home/.chezmoitemplates/ai-instructions.md`. It covers conventional commits, branch naming
-(`feature/ABC-123-short-name`, `fix/42-short-name`), the rebase-only workflow, Homebrew-first
-installs, chezmoi, and secret handling. chezmoi writes it to each tool's global location:
+Personal preferences and subagent roles for Claude Code, Codex and Antigravity are managed
+from a single source of truth:
 
-| Tool | File |
-|---|---|
-| Claude Code | `~/.claude/CLAUDE.md` |
-| Codex | `~/.codex/AGENTS.md` |
-| Antigravity | `~/.gemini/config/AGENTS.md` |
+- `home/.chezmoitemplates/ai-instructions.md` — shared git, environment, and secret rules.
+- `home/.chezmoitemplates/ai-delegation.md` — shared subagent delegation rules.
+- `home/.chezmoidata/ai.yaml` — semantic model tiers (`fast`, `balanced`, `reasoning`) mapped
+  per harness, role metadata, and pinned subagent skill packs (`agentSkills`).
+- `home/.chezmoitemplates/agents/` — harness-agnostic role playbooks (`implementer`, `scoper`,
+  `shipper`, `reviewer`, `wordpress-security-reviewer`).
 
-Edit the shared file, then `chezmoi apply`. These shared instructions are not enforced by git
-hooks (Claude Code does enforce the 72-character commit header limit via its `PreToolUse` hook
-below).
+chezmoi renders native instructions and native subagents to each tool's global location:
+
+| Tool | Instructions | Native subagents |
+|---|---|---|
+| Claude Code | `~/.claude/CLAUDE.md` | `~/.claude/agents/*.md` (`haiku` / `sonnet` / `opus`) |
+| Antigravity | `~/.gemini/config/AGENTS.md` | `~/.gemini/config/agents/*.md` (`flash` / `pro` / `inherit`) |
+| Codex | `~/.codex/AGENTS.md` | `~/.codex/agents/*.toml` (`model_reasoning_effort`, `sandbox_mode`) |
+
+Subagent-only skill packs (such as `wordpress-security`, pinned by commit + SHA-256) are
+downloaded to `~/.local/share/agent-skills/` so all three harnesses' subagents can read them
+without auto-loading them into any main session.
+
+Edit the shared templates or `ai.yaml`, then `chezmoi apply`. These shared instructions are not
+enforced by git hooks (Claude Code does enforce the 72-character commit header limit via its
+`PreToolUse` hook below).
 
 ## Claude Code
 
@@ -140,10 +151,9 @@ is tracked, so it follows me to every machine:
 | Tracked | Why |
 |---|---|
 | `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications, and managed hooks. Other keys, such as hooks plugins add, are left alone |
-| `~/.claude/CLAUDE.md` | The shared instructions plus a Claude-only section (`dot_claude/CLAUDE.md.tmpl`) telling the main session when to use the subagents below |
-| `~/.claude/agents/` | Subagents to save usage, after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/): `implementer` (Sonnet) writes code, `scoper` (Haiku) gathers facts, `shipper` (Haiku) commits and opens PRs, `reviewer` (Opus) only for risky changes, and `wordpress-security-reviewer` (Opus, high effort) for read-only WordPress security audits. Opus in the main session plans and reviews |
+| `~/.claude/CLAUDE.md` | Shared instructions (`ai-instructions.md`) plus shared delegation rules (`ai-delegation.md`) |
+| `~/.claude/agents/` | Native Claude Code subagent wrappers rendered from `home/.chezmoidata/ai.yaml` and `home/.chezmoitemplates/agents/` (after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/)) |
 | `~/.claude/hooks/` | `check-commit-headers.sh` (`PreToolUse` Bash hook that blocks `git push` if a commit header exceeds 72 characters) |
-| `~/.claude/agent-skills/` | Pinned, checksum-verified skill packs read only by subagents (such as `wordpress-security`), kept out of `~/.claude/skills` so the main session never loads them |
 | `commands/`, `keybindings.json` | Add with `chezmoi add` when created |
 
 Deliberately **not** tracked, and blocked by `.chezmoiignore` so they can't be
@@ -192,10 +202,11 @@ AGENTS.md, CLAUDE.md        repo-level instructions for AI coding agents
 home/
   .chezmoi.toml.tmpl        first-run prompts (name, email), umask and WSL detection
   .chezmoiignore            keeps caches, credentials and locked Bitwarden targets out of apply
-  .chezmoiexternal.toml.tmpl  oh-my-zsh + plugins, pinned talosctl/amtool, Claude agentSkills
+  .chezmoiexternal.toml.tmpl  oh-my-zsh + plugins, pinned talosctl/amtool, shared agentSkills
   .chezmoidata/
+    ai.yaml                 semantic model tiers, subagent roles and pinned agentSkills
     alertmanager.yaml       pinned amtool version + checksums
-    claude.yaml             Claude Code settings, hooks and agentSkills
+    claude.yaml             Claude Code settings and managed hooks
     packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt and Docker lists
     projects.yaml           repos to clone into ~/Projects
     secrets.yaml            Bitwarden SSH key item and secret env vars
@@ -203,7 +214,10 @@ home/
     talos.yaml              pinned talosctl version + checksums
     zsh.yaml                oh-my-zsh plugins
   .chezmoitemplates/
+    agents/                 shared harness-agnostic subagent playbooks
+    ai-delegation.md        shared subagent delegation rules
     ai-instructions.md      shared AI assistant preferences
+    *-agent                 per-harness subagent wrappers (claude, antigravity, codex)
     bitwarden-*             exact-name Bitwarden helpers and vault-unlocked check
     signing-public-key      SSH signing key lookup (Bitwarden or ~/.ssh/id_ed25519.pub)
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
@@ -219,10 +233,14 @@ home/
   dot_claude/
     CLAUDE.md.tmpl          -> ~/.claude/CLAUDE.md
     modify_settings.json.tmpl  merges .chezmoidata/claude.yaml into ~/.claude/settings.json
-    agents/                 Claude Code subagents
+    agents/                 Claude Code native subagent wrappers
     hooks/                  Claude Code hooks (check-commit-headers.sh)
-  dot_codex/AGENTS.md.tmpl  -> ~/.codex/AGENTS.md
-  dot_gemini/config/AGENTS.md.tmpl  -> ~/.gemini/config/AGENTS.md
+  dot_codex/
+    AGENTS.md.tmpl          -> ~/.codex/AGENTS.md
+    agents/                 Codex native TOML subagent wrappers
+  dot_gemini/config/
+    AGENTS.md.tmpl          -> ~/.gemini/config/AGENTS.md
+    agents/                 Antigravity native subagent wrappers
   dot_config/
     git/allowed_signers.tmpl  -> ~/.config/git/allowed_signers
     mise/conf.d/settings.toml -> mise settings (reads .terraform-version)
