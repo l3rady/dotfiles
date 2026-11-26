@@ -109,6 +109,7 @@ packages:
     - cifs-utils         # kernel mount helper for SMB shares
     - python-is-python3
     - command-not-found  # handler for the command-not-found zsh plugin
+    - earlyoom           # userspace OOM killer (stops runaway processes before swap thrashing)
 
   # Installed with apt from Docker's own repository (added automatically).
   docker:

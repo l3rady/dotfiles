@@ -192,6 +192,48 @@ Repositories in `home/.chezmoidata/projects.yaml` are cloned into
 `~/Projects` once `gh auth login` is done. **Add new projects there** as
 `owner/name`; folders that already exist are never touched.
 
+## Memory limits
+
+Three layers stop runaway tests or builds from thrashing swap and locking up
+the host:
+
+- **Docker container slice:** `home/run_onchange_after_30-configure-memory-limits.sh.tmpl`
+  sets `"cgroup-parent": "docker-containers.slice"` in `/etc/docker/daemon.json`
+  and writes `/etc/systemd/system/docker-containers.slice` (`MemoryHigh=70%`,
+  `MemoryMax=75%`, `MemorySwapMax=0` from `home/.chezmoidata/system.yaml`). Even
+  uncapped containers cannot exceed 75% of RAM or spill into swap.
+- **`earlyoom`:** installed via `packages.yaml` and tuned in `/etc/default/earlyoom`
+  (`-m 5,2 -s 100,100 -r 3600`) to `SIGTERM` at 5% available RAM and `SIGKILL`
+  at 2% regardless of swap, while avoiding core shell/session/container daemons
+  (processes *inside* containers have their own process names and are still
+  killed normally).
+- **`memcap`:** `~/.local/bin/memcap` wraps `systemd-run --user --scope` to cap
+  an individual host command with zero swap, e.g. `memcap 8G pytest`.
+
+### Windows `.wslconfig` (host side)
+
+WSL's VM-wide memory and swap ceilings live on the Windows host in
+`%USERPROFILE%\.wslconfig` (outside chezmoi's `~`). Recommended settings on a
+64 GiB Windows machine:
+
+```ini
+[wsl2]
+memory=32GB
+swap=0
+
+[experimental]
+autoMemoryReclaim=gradual
+```
+
+- Lower `memory=` (e.g. `24GB`) if Windows host apps need more headroom.
+- `swap=0` eliminates `swap.vhdx` disk thrashing; if legitimate builds ever hit
+  spikes over the ceiling, a small `swap=2GB` paired with `earlyoom` (`-s 100,100`)
+  gives a cushion without letting swap fill.
+- `autoMemoryReclaim` controls how WSL returns unused Linux page cache to
+  Windows when idle (`dropCache` is the default and flushes all at once;
+  `gradual` reclaims slowly over time; `disabled` turns reclamation off).
+- Run `wsl --shutdown` in PowerShell after editing `.wslconfig`.
+
 ## Layout
 
 ```
@@ -210,7 +252,7 @@ home/
     packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt and Docker lists
     projects.yaml           repos to clone into ~/Projects
     secrets.yaml            Bitwarden SSH key item and secret env vars
-    system.yaml             shell locale
+    system.yaml             shell locale, earlyoom args, and Docker slice limits
     talos.yaml              pinned talosctl version + checksums
     zsh.yaml                oh-my-zsh plugins
   .chezmoitemplates/
@@ -222,6 +264,7 @@ home/
     signing-public-key      SSH signing key lookup (Bitwarden or ~/.ssh/id_ed25519.pub)
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_onchange_after_20-install-node.sh.tmpl       Node LTS + Terraform via mise, global npm packages
+  run_onchange_after_30-configure-memory-limits.sh.tmpl  earlyoom + Docker systemd slice
   run_once_after_80-enable-git-hooks.sh.tmpl       turns on the gitleaks hook
   run_after_85-kube-config.sh                      creates ~/.kube/config if missing
   run_once_after_90-set-login-shell.sh             sets /usr/bin/zsh as login shell
@@ -249,7 +292,7 @@ home/
     terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
                               providers cached in ~/.cache/terraform, no ~/.terraform.d)
     zsh/private_secrets.zsh.tmpl -> ~/.config/zsh/secrets.zsh (from Bitwarden)
-  dot_local/bin/            -> ~/.local/bin/{pbcopy,pbpaste} (WSL clipboard helpers)
+  dot_local/bin/            -> ~/.local/bin/{memcap,pbcopy,pbpaste} (pbcopy/pbpaste WSL-only)
   private_dot_cloudflared/  -> ~/.cloudflared/{cert.pem,credentials.json} (from Bitwarden)
   private_dot_ssh/          -> ~/.ssh/{id_ed25519,id_ed25519.pub} (from Bitwarden)
   private_dot_talos/        -> ~/.talos/config (from Bitwarden)

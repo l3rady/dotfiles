@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Managed by chezmoi. Configures earlyoom and a systemd memory slice for
+# Docker containers from home/.chezmoidata/system.yaml. Re-runs automatically
+# whenever the rendered config changes.
+set -euo pipefail
+
+write_root_file() {
+  local dest="$1"
+  local content="$2"
+  local tmp
+  tmp="$(mktemp)"
+  trap 'rm -f "$tmp"' RETURN
+  printf '%s' "$content" > "$tmp"
+  if sudo test -f "$dest" && sudo cmp -s "$tmp" "$dest"; then
+    return 0
+  fi
+  sudo install -d -m 0755 "$(dirname "$dest")"
+  sudo install -m 0644 "$tmp" "$dest"
+  printf 'changed\n'
+}
+
+earlyoom_changed=0
+slice_changed=0
+daemon_changed=0
+
+{{- if .earlyoom }}
+earlyoom_content="$(cat <<'EOF'
+# Managed by chezmoi (home/.chezmoidata/system.yaml).
+EARLYOOM_ARGS={{ .earlyoom.args | quote }}
+EOF
+)"
+earlyoom_content="${earlyoom_content}"$'\n'
+result="$(write_root_file /etc/default/earlyoom "$earlyoom_content")"
+if [ "$result" = "changed" ]; then
+  echo "==> Updated /etc/default/earlyoom"
+  earlyoom_changed=1
+fi
+{{- end }}
+
+{{- if and .packages.docker .docker_slice }}
+slice_path="/etc/systemd/system/{{ .docker_slice.name }}"
+slice_content="$(cat <<'EOF'
+# Managed by chezmoi (home/.chezmoidata/system.yaml).
+[Unit]
+Description=Memory-capped slice for Docker containers
+
+[Slice]
+MemoryHigh={{ .docker_slice.memory_high }}
+MemoryMax={{ .docker_slice.memory_max }}
+MemorySwapMax={{ .docker_slice.memory_swap_max }}
+EOF
+)"
+slice_content="${slice_content}"$'\n'
+result="$(write_root_file "$slice_path" "$slice_content")"
+if [ "$result" = "changed" ]; then
+  echo "==> Updated $slice_path"
+  slice_changed=1
+fi
+
+sudo install -d -m 0755 /etc/docker
+result="$(sudo python3 - /etc/docker/daemon.json {{ .docker_slice.name | quote }} <<'PY'
+import json, pathlib, sys
+
+path = pathlib.Path(sys.argv[1])
+slice_name = sys.argv[2]
+
+if path.exists():
+    raw = path.read_text().strip()
+    data = json.loads(raw) if raw else {}
+    if not isinstance(data, dict):
+        raise SystemExit(f"{path}: expected a JSON object")
+else:
+    data = {}
+
+if data.get("cgroup-parent") == slice_name:
+    sys.exit(0)
+
+data["cgroup-parent"] = slice_name
+path.write_text(json.dumps(data, indent=2) + "\n")
+print("changed")
+PY
+)"
+if [ "$result" = "changed" ]; then
+  echo "==> Set cgroup-parent={{ .docker_slice.name }} in /etc/docker/daemon.json"
+  daemon_changed=1
+fi
+{{- end }}
+
+if [ -d /run/systemd/system ]; then
+  if [ "$slice_changed" -eq 1 ]; then
+    sudo systemctl daemon-reload
+  fi
+
+{{- if .earlyoom }}
+  if [ -f /usr/lib/systemd/system/earlyoom.service ] || [ -f /lib/systemd/system/earlyoom.service ]; then
+    if ! systemctl is-enabled --quiet earlyoom.service; then
+      sudo systemctl enable earlyoom.service
+    fi
+    if [ "$earlyoom_changed" -eq 1 ] || ! systemctl is-active --quiet earlyoom.service; then
+      echo "==> Restarting earlyoom.service"
+      sudo systemctl restart earlyoom.service
+    fi
+  fi
+{{- end }}
+
+{{- if and .packages.docker .docker_slice }}
+  if [ "$slice_changed" -eq 1 ] || [ "$daemon_changed" -eq 1 ]; then
+    if systemctl is-active --quiet docker.service; then
+      echo "==> Restarting docker.service to apply {{ .docker_slice.name }}"
+      sudo systemctl restart docker.service
+    fi
+  fi
+{{- end }}
+else
+{{- if .earlyoom }}
+  if [ -f /usr/lib/systemd/system/earlyoom.service ] || [ -f /lib/systemd/system/earlyoom.service ]; then
+    sudo systemctl enable earlyoom.service >/dev/null 2>&1 || true
+  fi
+{{- end }}
+  echo "!! Memory limits configured; they will take effect after 'wsl --shutdown' (or reboot) once systemd is running"
+fi

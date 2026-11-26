@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Run a command inside a transient systemd user cgroup scope with a hard memory
+# cap and swap disabled (requires systemd + cgroup v2 memory delegation).
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: memcap <limit> [--] <command> [args...]
+
+Run <command> in a systemd user scope capped at MemoryMax=<limit> with
+MemorySwapMax=0. <limit> uses systemd size syntax (e.g. 4G, 512M, 50%).
+
+Examples:
+  memcap 8G pytest
+  memcap 4G -- npm test
+EOF
+}
+
+if [ "$#" -lt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+case "$1" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+esac
+
+limit="$1"
+shift
+
+if [ "${1:-}" = "--" ]; then
+  shift
+fi
+
+if [ "$#" -lt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if ! command -v systemd-run >/dev/null 2>&1; then
+  echo "memcap: systemd-run not found" >&2
+  exit 1
+fi
+
+if [ ! -d /run/systemd/system ]; then
+  echo "memcap: systemd is not running (enable systemd in /etc/wsl.conf and run 'wsl --shutdown')" >&2
+  exit 1
+fi
+
+exec systemd-run --user --scope --quiet \
+  -p "MemoryMax=$limit" \
+  -p MemorySwapMax=0 \
+  -- "$@"
