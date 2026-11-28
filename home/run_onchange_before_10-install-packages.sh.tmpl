@@ -20,9 +20,13 @@ DOCKER
 fi
 {{ end -}}
 
+{{- $aptPackages := concat .packages.apt .packages.docker -}}
+{{- if and (get . "isVM") .packages.vm_apt -}}
+{{-   $aptPackages = concat $aptPackages .packages.vm_apt -}}
+{{- end }}
 echo "==> apt"
 sudo apt-get update
-sudo apt-get install -y {{ concat .packages.apt .packages.docker | join " " }}
+sudo apt-get install -y {{ $aptPackages | join " " }}
 
 {{ if .locale -}}
 # Generate the locale .zshrc uses (needs the locales package, installed above).

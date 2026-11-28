@@ -44,6 +44,15 @@
 .local/bin/pbpaste
 {{- end }}
 
+# Native Linux VM tweaks (skipped on WSL and bare-metal installs)
+{{- if not (get . "isVM") }}
+35-configure-vm.sh
+{{- end }}
+
+# T3 Code manages its own versioned systemd user unit (`t3 service install` / `t3 update`)
+.config/systemd/user/t3code.service
+.config/systemd/user/default.target.wants
+
 # Files built from Bitwarden are skipped unless the vault is really unlocked
 # (see .chezmoitemplates/bitwarden-unlocked). Skipping (rather than rendering
 # empty) also stops chezmoi deleting these files while the vault is locked.

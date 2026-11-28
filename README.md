@@ -1,6 +1,6 @@
 # dotfiles
 
-My Ubuntu (WSL) dev environment, managed with [chezmoi](https://chezmoi.io).
+My Ubuntu (WSL and headless VM) dev environment, managed with [chezmoi](https://chezmoi.io).
 Packages come from Homebrew on Linux, with apt for anything brew doesn't have.
 Shell is zsh + oh-my-zsh with the starship prompt. No secrets live in this repo.
 
@@ -8,7 +8,7 @@ Shell is zsh + oh-my-zsh with the starship prompt. No secrets live in this repo.
 
 Steps 1 and 2 are the only manual work; the rest is one command.
 
-### Step 1: Install Ubuntu in WSL (Windows)
+### Step 1a: Install Ubuntu in WSL (Windows)
 
 In PowerShell as Administrator:
 
@@ -18,6 +18,19 @@ wsl --install -d Ubuntu
 
 Reboot if asked, then open **Ubuntu** from the Start menu and create your
 Linux username and password. You'll need that password during the install.
+
+### Step 1b: Or prepare a headless Ubuntu VM
+
+On a fresh Ubuntu LTS VM (KVM/QEMU, Proxmox, VMware, cloud VM), SSH in and make
+sure `curl` and `git` are installed:
+
+```sh
+sudo apt-get update && sudo apt-get install -y curl git
+```
+
+`home/.chezmoi.toml.tmpl` automatically detects native Linux VMs (`isVM = true`
+via `systemd-detect-virt --vm`, always `false` on WSL), so VM guest packages and
+systemd tweaks are enabled automatically without changing WSL installs.
 
 ### Step 2: Install everything
 
@@ -70,6 +83,12 @@ bash ~/.local/share/chezmoi/install.sh
   group take effect.
 - If the install printed "Enabled systemd in /etc/wsl.conf", run
   `wsl --shutdown` in PowerShell and reopen Ubuntu. Docker needs systemd.
+- On a headless Ubuntu VM, configure remote access for T3 Code once logged in
+  over SSH (installs/updates `t3code.service` and walks through T3 Connect or
+  LAN/tailnet setup):
+  ```sh
+  t3 up --headless
+  ```
 - Unlock Bitwarden (skipped during the first install because the vault is
   locked) and sign in to GitHub, then run `chezmoi apply` once to write your
   SSH signing key, secrets, Talos/kube configs, and clone the projects in
@@ -146,6 +165,43 @@ On a VM without a local desktop browser:
   ```sh
   ssh -L <port>:127.0.0.1:<port> user@vm-host
   ```
+
+## Ubuntu VM (headless)
+
+`home/.chezmoi.toml.tmpl` sets `isWSL` and `isVM` in `~/.config/chezmoi/chezmoi.toml`.
+On WSL, `isWSL = true` and `isVM = false`, so WSL installs skip VM-only tweaks. On a
+native Linux VM (detected via `systemd-detect-virt --vm`), `isVM = true` enables:
+
+- **Guest packages (`packages.vm_apt`):** installs `qemu-guest-agent` and `openssh-server`
+  via apt in `run_onchange_before_10-install-packages.sh.tmpl`.
+- **Guest services & disk reclaim (`run_onchange_after_35-configure-vm.sh.tmpl`):**
+  enables and starts `fstrim.timer` (reclaims freed blocks from Docker layers, caches,
+  and `node_modules` on thin-provisioned disks), `qemu-guest-agent.service`, and
+  `ssh.socket`/`ssh.service`.
+- **Systemd user lingering & background AI services:** runs
+  `loginctl enable-linger "$USER"` so user services start on boot and keep running after
+  SSH logout, and installs T3 Code's built-in systemd user unit (`t3 service install`)
+  when `t3` is present.
+
+`~/.config/systemd/user/t3code.service` is owned by `t3` itself (and ignored in
+`home/.chezmoiignore`) so `t3 update` and `t3 up` can update its versioned launcher
+without conflicting with chezmoi. Useful commands on the VM:
+
+```sh
+# Configure T3 Connect / LAN access and ensure the background service is running
+t3 up --headless
+
+# Check service state and logs
+t3 status
+systemctl --user status t3code.service
+journalctl --user -u t3code.service -f
+
+# Optional: protect T3 Code server from OOM kills under agent memory pressure
+t3 service protect
+```
+
+To force VM mode on a bare-metal headless Ubuntu host, set `isVM = true` under `[data]`
+in `~/.config/chezmoi/chezmoi.toml` and run `chezmoi apply`.
 
 ## Git
 
@@ -296,17 +352,17 @@ install.sh                  bootstrap from an existing clone (alternative to the
 .githooks/pre-commit        gitleaks secret scan on staged commits
 AGENTS.md, CLAUDE.md        repo-level instructions for AI coding agents
 home/
-  .chezmoi.toml.tmpl        first-run prompts (name, email), umask and WSL detection
+  .chezmoi.toml.tmpl        first-run prompts (name, email), umask, WSL and VM detection
   .chezmoiignore            keeps caches, credentials and locked Bitwarden targets out of apply
   .chezmoiexternal.toml.tmpl  oh-my-zsh + plugins, pinned talosctl/amtool, shared agentSkills
   .chezmoidata/
     ai.yaml                 semantic model tiers, subagent roles and pinned agentSkills
     alertmanager.yaml       pinned amtool version + checksums
     claude.yaml             Claude Code settings and managed hooks
-    packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt and Docker lists
+    packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt, VM and Docker lists
     projects.yaml           repos to clone into ~/Projects
     secrets.yaml            Bitwarden SSH key item and secret env vars
-    system.yaml             shell locale, earlyoom args, and Docker slice limits
+    system.yaml             shell locale, earlyoom args, Docker slice limits and VM service settings
     talos.yaml              pinned talosctl version + checksums
     zsh.yaml                oh-my-zsh plugins
   .chezmoitemplates/
@@ -319,6 +375,7 @@ home/
   run_onchange_before_10-install-packages.sh.tmpl  re-runs when package lists change
   run_onchange_after_20-install-node.sh.tmpl       Node LTS + Terraform via mise, global npm packages
   run_onchange_after_30-configure-memory-limits.sh.tmpl  earlyoom + Docker systemd slice
+  run_onchange_after_35-configure-vm.sh.tmpl       VM guest services, fstrim.timer, user lingering, t3 service
   run_once_after_80-enable-git-hooks.sh.tmpl       turns on the gitleaks hook
   run_after_85-kube-config.sh                      creates ~/.kube/config if missing
   run_once_after_90-set-login-shell.sh             sets /usr/bin/zsh as login shell

@@ -16,3 +16,13 @@ docker_slice:
   memory_high: "70%"
   memory_max: "75%"
   memory_swap_max: "0"
+
+# Native Ubuntu VM settings (applied when isVM = true in chezmoi.toml; skipped on WSL).
+vm:
+  # Keep systemd --user services running at boot and after SSH logout.
+  enable_linger: true
+  # Install T3 Code's built-in systemd user service (`t3 service install`) if `t3`
+  # is installed and ~/.config/systemd/user/t3code.service does not exist yet.
+  install_t3_service: true
+  # Enable weekly TRIM so thin-provisioned VM disks reclaim freed blocks.
+  enable_fstrim: true

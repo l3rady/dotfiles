@@ -2,6 +2,11 @@
 {{- $name := promptStringOnce . "name" "Your name for git commits" -}}
 {{- $email := promptStringOnce . "email" "Your email for git commits" -}}
 {{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+{{- $virt := "" -}}
+{{- if and (eq .chezmoi.os "linux") (not $isWSL) (lookPath "systemd-detect-virt") -}}
+{{-   $virt = trim (output "sh" "-c" "systemd-detect-virt --vm 2>/dev/null || true") -}}
+{{- end -}}
+{{- $isVM := and (not $isWSL) (ne $virt "") (ne $virt "none") -}}
 
 sourceDir = {{ .chezmoi.workingTree | quote }}
 # Pin file/dir modes to 0644/0755 regardless of whether a shell uses umask 022 or Ubuntu's 002
@@ -15,3 +20,4 @@ umask = 0o022
     name = {{ $name | quote }}
     email = {{ $email | quote }}
     isWSL = {{ $isWSL }}
+    isVM = {{ $isVM }}

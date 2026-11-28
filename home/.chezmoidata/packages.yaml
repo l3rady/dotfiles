@@ -121,6 +121,11 @@ packages:
     - docker-buildx-plugin
     - docker-compose-plugin
 
+  # Installed with apt only on native Linux VMs (isVM = true; skipped on WSL).
+  vm_apt:
+    - qemu-guest-agent   # hypervisor guest integration (clean shutdown, IP reporting)
+    - openssh-server     # headless SSH access
+
 # Deliberately not listed:
 # - zsh-autosuggestions, zsh-syntax-highlighting: loaded as oh-my-zsh plugins (zsh.yaml)
 # - vscode-server: VS Code installs it itself the first time you run `code .` in WSL

@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# Managed by chezmoi. Configures native Ubuntu VM guest services, fstrim.timer,
+# systemd user lingering, and persistent user services from
+# home/.chezmoidata/system.yaml. Only runs when isVM = true (skipped on WSL).
+set -euo pipefail
+
+{{- if not (get . "isVM") }}
+exit 0
+{{- else }}
+
+unit_exists() {
+  local unit="$1"
+  systemctl list-unit-files --no-legend "$unit" 2>/dev/null | awk '{print $1}' | grep -Fxq "$unit"
+}
+
+enable_and_start_unit() {
+  local unit="$1"
+  local soft_start="${2:-false}"
+
+  if ! unit_exists "$unit"; then
+    return 0
+  fi
+
+  if [ -d /run/systemd/system ]; then
+    if ! systemctl is-enabled --quiet "$unit" 2>/dev/null; then
+      echo "==> Enabling $unit"
+      sudo systemctl enable "$unit"
+    fi
+    if ! systemctl is-active --quiet "$unit" 2>/dev/null; then
+      echo "==> Starting $unit"
+      if [ "$soft_start" = "true" ]; then
+        if ! sudo systemctl start "$unit"; then
+          echo "!! Could not start $unit now (check hypervisor guest-agent device config)" >&2
+        fi
+      else
+        sudo systemctl start "$unit"
+      fi
+    fi
+  else
+    sudo systemctl enable "$unit" >/dev/null 2>&1 || true
+  fi
+}
+
+{{- if and .vm .vm.enable_fstrim }}
+# Reclaim freed blocks (Docker layers, caches, node_modules) on thin-provisioned disks
+enable_and_start_unit fstrim.timer
+{{- end }}
+
+# Enable QEMU Guest Agent when installed; soft-start in case the hypervisor
+# virtio-serial channel is not attached yet.
+enable_and_start_unit qemu-guest-agent.service true
+
+# Ensure OpenSSH server is enabled without conflicting with Ubuntu 24.04's ssh.socket
+if [ -d /run/systemd/system ]; then
+  if ! systemctl is-active --quiet ssh.socket 2>/dev/null && ! systemctl is-active --quiet ssh.service 2>/dev/null; then
+    if unit_exists ssh.socket; then
+      enable_and_start_unit ssh.socket
+    elif unit_exists ssh.service; then
+      enable_and_start_unit ssh.service
+    fi
+  fi
+else
+  if unit_exists ssh.socket; then
+    sudo systemctl enable ssh.socket >/dev/null 2>&1 || true
+  elif unit_exists ssh.service; then
+    sudo systemctl enable ssh.service >/dev/null 2>&1 || true
+  fi
+fi
+
+{{- if and .vm .vm.enable_linger }}
+# Keep systemd --user services running at boot and after SSH logout
+if [ -d /run/systemd/system ] && command -v loginctl >/dev/null 2>&1; then
+  if [ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null || true)" != "yes" ]; then
+    echo "==> Enabling systemd user lingering for $USER"
+    sudo loginctl enable-linger "$USER"
+  fi
+fi
+{{- end }}
+
+{{- if and .vm .vm.install_t3_service }}
+# Install T3 Code's built-in systemd user service once `t3` is available.
+# T3 manages ~/.config/systemd/user/t3code.service itself (including updates).
+if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
+if command -v t3 >/dev/null 2>&1; then
+  if [ ! -f "$HOME/.config/systemd/user/t3code.service" ]; then
+    if [ -d /run/systemd/system ] && systemctl --user show-environment >/dev/null 2>&1; then
+      echo "==> Installing T3 Code background user service"
+      t3 service install
+    else
+      echo "!! Skipping 't3 service install' (no active systemd user bus). Run 't3 up --headless' after logging in over SSH."
+    fi
+  fi
+fi
+{{- end }}
+
+if [ ! -d /run/systemd/system ]; then
+  echo "!! VM services enabled; reboot so systemd activates guest tweaks and user lingering"
+fi
+{{- end }}
