@@ -93,6 +93,60 @@ bash ~/.local/share/chezmoi/install.sh
 | Commit and push | `chezmoi cd` then normal `git add/commit/push` |
 | Pull changes on another machine | `chezmoi update` |
 
+## Remote sessions (headless VM)
+
+`tmux` and `mosh` are installed via `home/.chezmoidata/packages.yaml`, and `~/.tmux.conf`
+is managed by chezmoi (`home/dot_tmux.conf`) with mouse mode, 50,000-line scrollback,
+truecolor, OSC 52 clipboard passthrough, and `/usr/bin/zsh` as the default shell.
+
+### Persistent sessions with tmux
+
+Run long-lived AI coding sessions (`claude`, `codex`, `agy`, `herdr`) inside `tmux` so
+they survive SSH disconnects and laptop sleep:
+
+```sh
+# Attach to an existing session or create it if missing
+tmux new-session -As ai
+
+# Detach without stopping running commands: Ctrl-b d
+# Reattach later over SSH:
+tmux attach -t ai
+```
+
+Useful bindings in `~/.tmux.conf` (default prefix `Ctrl-b`):
+
+| Binding | Action |
+|---|---|
+| `prefix \|` / `prefix -` | Split pane horizontally / vertically in current directory |
+| `prefix c` | New window in current directory |
+| `prefix h/j/k/l` (or arrows) | Move between panes |
+| `prefix H/J/K/L` | Resize active pane |
+| `prefix r` | Reload `~/.tmux.conf` |
+
+For flaky mobile or roaming connections, `mosh` keeps the SSH session alive across IP
+changes (requires UDP ports `60000-61000` reachable on the VM). If non-interactive SSH
+does not include Homebrew on `PATH`, pass the server path explicitly:
+
+```sh
+mosh --server=/home/linuxbrew/.linuxbrew/bin/mosh-server user@vm-host -- tmux new-session -As ai
+```
+
+### Headless authentication over SSH
+
+On a VM without a local desktop browser:
+
+- **Bitwarden & GitHub:** both work directly in the terminal (`bw login`,
+  `export BW_SESSION="$(bw unlock --raw)"`, and `gh auth login` using the web device-code
+  flow).
+- **Device-code / URL login:** tools like `gh auth login`, `t3 up --headless`, and CLI
+  logins that print a URL + code can be approved in a browser on your laptop.
+- **Localhost OAuth callbacks:** if an AI CLI (`claude`, `codex`, `agy`) opens a callback
+  listener on `127.0.0.1:<port>` on the VM, forward that port from your laptop over SSH
+  before completing the login in your local browser:
+  ```sh
+  ssh -L <port>:127.0.0.1:<port> user@vm-host
+  ```
+
 ## Git
 
 `~/.gitconfig` (from `home/dot_gitconfig.tmpl`) is set up for a linear, rebase-based workflow:
@@ -270,6 +324,7 @@ home/
   run_once_after_90-set-login-shell.sh             sets /usr/bin/zsh as login shell
   run_after_95-clone-projects.sh.tmpl              clones projects.yaml repos into ~/Projects
   dot_zshrc.tmpl            -> ~/.zshrc
+  dot_tmux.conf             -> ~/.tmux.conf
   dot_gitconfig.tmpl        -> ~/.gitconfig
   dot_default-npm-packages.tmpl  -> ~/.default-npm-packages (reinstalled by mise on Node upgrades)
   dot_cache/terraform/plugin-cache/  creates ~/.cache/terraform/plugin-cache
