@@ -5,6 +5,7 @@
 *.local
 .env
 .env.*
+vm/cloud-init.yaml
 
 # Keys and certificates
 id_rsa*

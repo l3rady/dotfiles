@@ -203,6 +203,42 @@ t3 service protect
 To force VM mode on a bare-metal headless Ubuntu host, set `isVM = true` under `[data]`
 in `~/.config/chezmoi/chezmoi.toml` and run `chezmoi apply`.
 
+### Provisioning a fresh VM with cloud-init
+
+`vm/cloud-init.yaml.example` (outside `home/`, so chezmoi never copies it into `~`)
+provisions a fresh Ubuntu LTS VM with a sudo user, key-only SSH, locale/timezone,
+`curl`, `git`, `openssh-server`, `qemu-guest-agent`, and `fstrim.timer`.
+
+1. Copy the template to an untracked local file and fill in your username and SSH public key:
+   ```sh
+   cp vm/cloud-init.yaml.example vm/cloud-init.yaml
+   ```
+   (`vm/cloud-init.yaml` is gitignored so local keys and host details are never committed.)
+2. Supply `vm/cloud-init.yaml` to your VM platform:
+   - **KVM / libvirt (`virt-install`):**
+     ```sh
+     virt-install ... --cloud-init user-data=vm/cloud-init.yaml
+     ```
+   - **NoCloud seed ISO (`cloud-localds`, for QEMU / generic hypervisors):**
+     ```sh
+     cloud-localds seed.iso vm/cloud-init.yaml
+     ```
+   - **Proxmox VE:** upload to your snippets storage and attach via
+     `qm set <vmid> --cicustom "user=local:snippets/cloud-init.yaml"`.
+   - **Ubuntu Server ISO autoinstall:** embed the user/package/runcmd sections under
+     `autoinstall.user-data:` in your autoinstall `user-data` file.
+3. Once the VM boots, SSH in and run the Step 2 chezmoi one-liner (or uncomment the
+   optional `runcmd` entry in `vm/cloud-init.yaml` to bootstrap unattended), then run
+   the interactive secret-restore and service setup steps:
+   ```sh
+   sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --apply l3rady
+   bw login
+   export BW_SESSION="$(bw unlock --raw)"
+   gh auth login
+   chezmoi apply
+   t3 up --headless
+   ```
+
 ## Git
 
 `~/.gitconfig` (from `home/dot_gitconfig.tmpl`) is set up for a linear, rebase-based workflow:
@@ -348,6 +384,7 @@ autoMemoryReclaim=gradual
 
 ```
 install.sh                  bootstrap from an existing clone (alternative to the one-liner)
+vm/cloud-init.yaml.example  example cloud-init user-data for provisioning a fresh Ubuntu VM
 .chezmoiroot                tells chezmoi the dotfiles live in home/
 .githooks/pre-commit        gitleaks secret scan on staged commits
 AGENTS.md, CLAUDE.md        repo-level instructions for AI coding agents

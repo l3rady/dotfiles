@@ -1,0 +1,67 @@
+#cloud-config
+# Example cloud-init user-data for provisioning a fresh Ubuntu LTS VM ready for
+# `chezmoi init --apply l3rady`. Lives outside `home/` so chezmoi never copies
+# it into `~`.
+#
+# Usage:
+#   1. Copy to a local untracked file: cp vm/cloud-init.yaml.example vm/cloud-init.yaml
+#   2. Replace <your-username>, hostname, timezone/locale (if needed), and the
+#      placeholder SSH public key below. Never commit real keys or tokens.
+#   3. Pass to your VM platform (cloud-localds / virt-install / Proxmox cicustom).
+
+hostname: ubuntu-dev
+manage_etc_hosts: true
+
+timezone: Europe/London
+locale: en_GB.UTF-8
+
+# Key-only SSH login; keep password auth disabled
+ssh_pwauth: false
+
+users:
+  - name: dev
+    gecos: Dev User
+    groups: [sudo]
+    shell: /bin/bash
+    # Passwordless sudo allows unattended `chezmoi apply` (and optional runcmd below).
+    # For password-prompted sudo instead, replace with `ALL=(ALL) ALL`, set
+    # `lock_passwd: false`, and provide a salted SHA-512 `passwd` hash locally.
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA_REPLACE_WITH_YOUR_SSH_PUBLIC_KEY user@workstation
+
+package_update: true
+package_upgrade: true
+
+# Base packages needed before chezmoi runs plus VM guest tooling
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - openssh-server
+  - qemu-guest-agent
+
+runcmd:
+  # Reclaim freed disk blocks on thin-provisioned VM storage
+  - [systemctl, enable, --now, fstrim.timer]
+  # Enable QEMU Guest Agent; soft-start in case the virtio channel is not attached yet
+  - [sh, -c, "systemctl enable qemu-guest-agent.service && (systemctl start qemu-guest-agent.service || true)"]
+  #
+  # Optional: run chezmoi automatically on first boot (takes several minutes for
+  # Homebrew). Uncomment and replace the git name/email placeholders if you want
+  # fully unattended bootstrap; otherwise SSH in and run the Step 2 one-liner
+  # interactively:
+  # - [
+  #     su, -l, dev, -c,
+  #     'sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --promptString "Your name for git commits=Your Name" --promptString "Your email for git commits=you@example.com" --apply l3rady'
+  #   ]
+  #
+  # After first boot (whether bootstrapped via runcmd or interactively over SSH),
+  # SSH in and finish interactive secret restore & remote service setup:
+  #   bw login
+  #   export BW_SESSION="$(bw unlock --raw)"
+  #   gh auth login
+  #   chezmoi apply
+  #   t3 up --headless
+
+final_message: "Ubuntu dev VM ready after $UPTIME seconds. SSH in and run chezmoi init --apply l3rady."
