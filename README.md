@@ -112,6 +112,22 @@ bash ~/.local/share/chezmoi/install.sh
 | Commit and push | `chezmoi cd` then normal `git add/commit/push` |
 | Pull changes on another machine | `chezmoi update` |
 
+## Shell environment
+
+Shell configuration is split between a shared, secret-free POSIX environment and
+interactive Zsh config:
+
+| File | Purpose |
+|---|---|
+| `~/.config/shell/env.sh` (`home/dot_config/shell/env.sh.tmpl`) | POSIX-compatible, secret-free environment: Homebrew (`brew shellenv sh`), `mise` shims ahead of Homebrew, `~/.local/bin`, locale, `EDITOR`, `TF_CLI_CONFIG_FILE`, `CHECKPOINT_DISABLE`, and WSL `BROWSER`/`GDK_DPI_SCALE`. |
+| `~/.bashrc` (`home/dot_bashrc.tmpl`) | Minimal Bash config that sources `~/.config/shell/env.sh` without loading interactive Zsh plugins or secrets. |
+| `~/.zshrc` (`home/dot_zshrc.tmpl`) | Interactive Zsh: sources `~/.config/shell/env.sh`, then loads oh-my-zsh, plugins, aliases, `~/.config/zsh/secrets.zsh`, `~/.zshrc.local`, fzf, starship, and zoxide. |
+
+Keeping `~/.config/shell/env.sh` and `~/.bashrc` free of secrets and interactive hooks lets
+scripts and non-interactive Bash sessions resolve Homebrew, `mise` (Node, Terraform,
+`claude`, `codex`), and `~/.local/bin` without inheriting `~/.config/zsh/secrets.zsh` or
+`~/.zshrc.local`.
+
 ## Remote sessions (headless VM)
 
 `tmux` and `mosh` are installed via `home/.chezmoidata/packages.yaml`, and `~/.tmux.conf`
@@ -417,6 +433,7 @@ home/
   run_after_85-kube-config.sh                      creates ~/.kube/config if missing
   run_once_after_90-set-login-shell.sh             sets /usr/bin/zsh as login shell
   run_after_95-clone-projects.sh.tmpl              clones projects.yaml repos into ~/Projects
+  dot_bashrc.tmpl           -> ~/.bashrc (minimal Bash, sources ~/.config/shell/env.sh)
   dot_zshrc.tmpl            -> ~/.zshrc
   dot_tmux.conf             -> ~/.tmux.conf
   dot_gitconfig.tmpl        -> ~/.gitconfig
@@ -436,6 +453,7 @@ home/
   dot_config/
     git/allowed_signers.tmpl  -> ~/.config/git/allowed_signers
     mise/conf.d/settings.toml -> mise settings (reads .terraform-version)
+    shell/env.sh.tmpl         -> ~/.config/shell/env.sh (shared POSIX, secret-free env)
     sops/private_age/         -> ~/.config/sops/age/keys.txt (from Bitwarden)
     starship.toml             -> ~/.config/starship.toml
     terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;

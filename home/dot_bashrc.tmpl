@@ -1,0 +1,19 @@
+# Managed by chezmoi (home/dot_bashrc.tmpl).
+# Minimal Bash environment for non-interactive shells, scripts, and AI harnesses.
+# Interactive Zsh plugins and secrets (~/.config/zsh/secrets.zsh, ~/.zshrc.local)
+# are intentionally not loaded here.
+
+if [ -r "$HOME/.config/shell/env.sh" ]; then
+  . "$HOME/.config/shell/env.sh"
+fi
+
+# Stop here for non-interactive shells.
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
+
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend checkwinsize
