@@ -1,0 +1,14 @@
+# Managed by chezmoi (home/dot_config/zsh/aliases/agents.zsh.tmpl).
+# Launch AI coding harnesses with GNU Bash as their tool shell while keeping
+# the interactive terminal on Zsh.
+
+_run_ai_harness() {
+  local bin="$1"
+  shift
+  env SHELL=/usr/bin/bash CLAUDE_CODE_SHELL=/usr/bin/bash "$bin" "$@"
+}
+
+for _harness in claude codex agy t3 herdr; do
+  eval "${_harness}() { _run_ai_harness ${_harness} \"\$@\"; }"
+done
+unset _harness

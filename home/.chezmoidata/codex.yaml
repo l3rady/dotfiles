@@ -1,0 +1,8 @@
+# Codex CLI baseline settings merged into ~/.codex/config.toml by
+# home/dot_codex/modify_config.toml.tmpl. Unmanaged runtime keys and comments
+# in ~/.codex/config.toml are preserved.
+codex:
+  allow_login_shell: false
+  shell_environment_policy:
+    set:
+      SHELL: "/usr/bin/bash"

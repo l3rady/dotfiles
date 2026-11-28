@@ -39,7 +39,12 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
 
 ## Environment
 
-- Ubuntu on WSL2 (Windows host). Shell: zsh with oh-my-zsh and starship.
+- Ubuntu (WSL2 on Windows host or headless Ubuntu VM).
+- **Interactive shell vs. agent shell:** the user's interactive login shell is Zsh
+  (oh-my-zsh + starship), while AI agent shell tools execute in non-interactive GNU Bash
+  with the shared toolchain from `~/.config/shell/env.sh`. Write standard Bash syntax in
+  tool commands and do not assume oh-my-zsh plugins, Zsh aliases, or `zoxide`'s `cd`
+  override are present.
 - Install software with **Homebrew first**; use apt only for what Homebrew doesn't have.
 - Dotfiles are managed by **chezmoi** (public repo `l3rady/dotfiles`, source at
   `~/.local/share/chezmoi`). Change managed files in the chezmoi source (`chezmoi edit`, or

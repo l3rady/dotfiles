@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+# chezmoi modify script for ~/.codex/config.toml: merges baseline shell
+# settings from .chezmoidata/codex.yaml while preserving unmanaged runtime keys,
+# sections, and comments.
+import json
+import re
+import sys
+import tomllib
+
+managed = json.loads(r'''{{ .codex | toJson }}''')
+current = sys.stdin.read()
+
+try:
+    parsed = tomllib.loads(current) if current.strip() else {}
+except tomllib.TOMLDecodeError as err:
+    sys.exit(
+        f"~/.codex/config.toml is not valid TOML ({err}); fix it and re-run chezmoi apply"
+    )
+
+
+def format_toml_value(value):
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        return json.dumps(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(format_toml_value(v) for v in value) + "]"
+    raise TypeError(f"Unsupported TOML value type: {type(value).__name__}")
+
+
+def find_section_bounds(lines, section_name):
+    """Return (header_idx, end_idx) for [section_name], or None."""
+    header_re = re.compile(r"^\s*\[([^\]]+)\]\s*(?:#.*)?$")
+    start = None
+    for i, line in enumerate(lines):
+        m = header_re.match(line)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        if start is not None:
+            return (start, i)
+        if name == section_name:
+            start = i
+    if start is not None:
+        return (start, len(lines))
+    return None
+
+
+def first_section_index(lines):
+    header_re = re.compile(r"^\s*\[")
+    for i, line in enumerate(lines):
+        if header_re.match(line):
+            return i
+    return len(lines)
+
+
+def upsert_key_in_range(lines, start, end, key, formatted_value):
+    key_re = re.compile(rf"^(\s*){re.escape(key)}\s*=")
+    for i in range(start, end):
+        m = key_re.match(lines[i])
+        if m:
+            lines[i] = f"{m.group(1)}{key} = {formatted_value}\n"
+            return True
+    insert_at = end
+    while insert_at > start and lines[insert_at - 1].strip() == "":
+        insert_at -= 1
+    lines.insert(insert_at, f"{key} = {formatted_value}\n")
+    return True
+
+
+def upsert_section_key(lines, section_name, key, formatted_value):
+    bounds = find_section_bounds(lines, section_name)
+    if bounds is not None:
+        start, end = bounds
+        upsert_key_in_range(lines, start + 1, end, key, formatted_value)
+        return
+    if lines and lines[-1].strip() != "":
+        lines.append("\n")
+    lines.append(f"[{section_name}]\n")
+    lines.append(f"{key} = {formatted_value}\n")
+
+
+lines = current.splitlines(keepends=True)
+if lines and not lines[-1].endswith("\n"):
+    lines[-1] += "\n"
+
+changed = False
+
+# 1. Top-level allow_login_shell
+if "allow_login_shell" in managed:
+    desired_login = managed["allow_login_shell"]
+    if parsed.get("allow_login_shell") != desired_login:
+        top_end = first_section_index(lines)
+        upsert_key_in_range(
+            lines, 0, top_end, "allow_login_shell", format_toml_value(desired_login)
+        )
+        changed = True
+
+# 2. [shell_environment_policy] and [shell_environment_policy.set]
+policy_cfg = managed.get("shell_environment_policy", {})
+existing_policy = parsed.get("shell_environment_policy", {})
+if not isinstance(existing_policy, dict):
+    existing_policy = {}
+
+# Managed env overrides under shell_environment_policy.set
+managed_set = policy_cfg.get("set", {})
+existing_set = existing_policy.get("set", {})
+if not isinstance(existing_set, dict):
+    existing_set = {}
+
+for env_key, env_val in managed_set.items():
+    if existing_set.get(env_key) == env_val:
+        continue
+    # Check if an inline `set = { ... }` already exists under [shell_environment_policy]
+    policy_bounds = find_section_bounds(lines, "shell_environment_policy")
+    inline_updated = False
+    if policy_bounds is not None:
+        p_start, p_end = policy_bounds
+        inline_re = re.compile(r"^\s*set\s*=\s*\{")
+        for i in range(p_start + 1, p_end):
+            if inline_re.match(lines[i]):
+                merged_set = dict(existing_set)
+                merged_set[env_key] = env_val
+                pairs = ", ".join(
+                    f"{k} = {format_toml_value(v)}" for k, v in merged_set.items()
+                )
+                lines[i] = "set = { " + pairs + " }\n"
+                existing_set = merged_set
+                inline_updated = True
+                break
+    if not inline_updated:
+        upsert_section_key(
+            lines, "shell_environment_policy.set", env_key, format_toml_value(env_val)
+        )
+        existing_set[env_key] = env_val
+    changed = True
+
+output = "".join(lines) if changed else current
+
+# Validate generated TOML before emitting it
+try:
+    verified = tomllib.loads(output) if output.strip() else {}
+except tomllib.TOMLDecodeError as err:
+    sys.exit(f"Generated invalid TOML for ~/.codex/config.toml: {err}")
+
+if "allow_login_shell" in managed:
+    assert verified.get("allow_login_shell") == managed["allow_login_shell"]
+for env_key, env_val in managed_set.items():
+    assert verified.get("shell_environment_policy", {}).get("set", {}).get(env_key) == env_val
+
+sys.stdout.write(output)

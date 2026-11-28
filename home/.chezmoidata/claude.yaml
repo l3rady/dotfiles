@@ -22,6 +22,11 @@ claude:
     preferredNotifChannel: auto
     inputNeededNotifEnabled: true
     agentPushNotifEnabled: true
+    # Merged into settings.json (see modify_settings.json.tmpl), preserving any
+    # machine-local or plugin-added env keys. Leading ~/ is expanded per host.
+    env:
+      CLAUDE_CODE_SHELL: "/usr/bin/bash"
+      CLAUDE_ENV_FILE: "~/.config/shell/env.sh"
     # Merged into the hooks already in settings.json (see modify_settings.json.tmpl), so
     # hooks that plugins add are kept. Blocks a push whose commits have a first line
     # over 72 characters, which commitlint rejects in CI.

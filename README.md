@@ -128,6 +128,24 @@ scripts and non-interactive Bash sessions resolve Homebrew, `mise` (Node, Terraf
 `claude`, `codex`), and `~/.local/bin` without inheriting `~/.config/zsh/secrets.zsh` or
 `~/.zshrc.local`.
 
+### AI coding harnesses in clean Bash
+
+Although the interactive login shell is Zsh, AI coding harnesses are configured to run
+their shell tools in non-interactive GNU Bash (avoiding Zsh/Bash syntax mismatches and
+bloated oh-my-zsh shell snapshots):
+
+- **Claude Code:** `home/.chezmoidata/claude.yaml` sets `env.CLAUDE_CODE_SHELL` to
+  `/usr/bin/bash` and `env.CLAUDE_ENV_FILE` to `~/.config/shell/env.sh` (expanded per host
+  and merged into `~/.claude/settings.json` by `modify_settings.json.tmpl`, preserving
+  unmanaged `env` keys).
+- **Codex CLI:** `home/.chezmoidata/codex.yaml` and `home/dot_codex/modify_config.toml.tmpl`
+  merge `allow_login_shell = false` and `[shell_environment_policy.set] SHELL = "/usr/bin/bash"`
+  into `~/.codex/config.toml` while preserving unmanaged runtime keys.
+- **Interactive Zsh launchers:** `home/dot_config/zsh/aliases/agents.zsh.tmpl` wraps
+  `claude`, `codex`, `agy`, `t3`, and `herdr` so launching them from Zsh passes
+  `SHELL=/usr/bin/bash` and `CLAUDE_CODE_SHELL=/usr/bin/bash` without changing your
+  interactive Zsh session.
+
 ## Remote sessions (headless VM)
 
 `tmux` and `mosh` are installed via `home/.chezmoidata/packages.yaml`, and `~/.tmux.conf`
@@ -412,6 +430,7 @@ home/
     ai.yaml                 semantic model tiers, subagent roles and pinned agentSkills
     alertmanager.yaml       pinned amtool version + checksums
     claude.yaml             Claude Code settings and managed hooks
+    codex.yaml              Codex CLI baseline shell policy settings
     packages.yaml           taps, brew, cask, mise (Node, Terraform), npm, apt, VM and Docker lists
     projects.yaml           repos to clone into ~/Projects
     secrets.yaml            Bitwarden SSH key item and secret env vars
@@ -446,6 +465,7 @@ home/
     hooks/                  Claude Code hooks (check-commit-headers.sh)
   dot_codex/
     AGENTS.md.tmpl          -> ~/.codex/AGENTS.md
+    modify_config.toml.tmpl merges .chezmoidata/codex.yaml into ~/.codex/config.toml
     agents/                 Codex native TOML subagent wrappers
   dot_gemini/config/
     AGENTS.md.tmpl          -> ~/.gemini/config/AGENTS.md
@@ -458,6 +478,7 @@ home/
     starship.toml             -> ~/.config/starship.toml
     terraform/dot_terraformrc -> ~/.config/terraform/.terraformrc (TF_CLI_CONFIG_FILE;
                               providers cached in ~/.cache/terraform, no ~/.terraform.d)
+    zsh/aliases/agents.zsh.tmpl -> ~/.config/zsh/aliases/agents.zsh (Bash harness wrappers)
     zsh/private_secrets.zsh.tmpl -> ~/.config/zsh/secrets.zsh (from Bitwarden)
   dot_local/bin/            -> ~/.local/bin/{memcap,pbcopy,pbpaste} (pbcopy/pbpaste WSL-only)
   private_dot_cloudflared/  -> ~/.cloudflared/{cert.pem,credentials.json} (from Bitwarden)

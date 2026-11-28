@@ -19,10 +19,24 @@ except json.JSONDecodeError as err:
 # Only replace values whose content differs, so key order Claude Code chose
 # is kept and an unchanged file stays byte-for-byte the same.
 for key, value in managed.items():
-    if key == "hooks":
+    if key in ("hooks", "env"):
         continue
     if settings.get(key) != value:
         settings[key] = value
+
+# Managed env keys are merged into settings["env"] so machine-local or
+# plugin-added env vars are preserved. Expand leading ~/ for path values.
+managed_env = managed.get("env", {})
+if isinstance(managed_env, dict) and managed_env:
+    existing_env = settings.get("env")
+    if not isinstance(existing_env, dict):
+        existing_env = {}
+        settings["env"] = existing_env
+    for env_key, env_val in managed_env.items():
+        if isinstance(env_val, str) and env_val.startswith("~/"):
+            env_val = os.path.expanduser(env_val)
+        if existing_env.get(env_key) != env_val:
+            existing_env[env_key] = env_val
 
 # Managed hooks live under ~/.claude/hooks/ (from dot_claude/hooks/). Any entry
 # whose commands all come from that directory is owned by chezmoi, so edits or
