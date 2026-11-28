@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+"""Lightweight UniFi controller API wrapper that keeps UNIFI_API_KEY out of
+agent environments, command arguments, and output.
+
+Configuration (~/.config/unifi/config):
+  UNIFI_URL=https://<controller-ip-or-host>
+  UNIFI_CACERT=/path/to/unifi-controller.pem   # optional; skips TLS verify if unset
+  UNIFI_TIMEOUT=30                             # optional; seconds
+
+API key lookup order (never printed or passed via argv):
+  1. ~/.config/unifi/api-key (first non-empty line, mode 0600)
+  2. UNIFI_API_KEY parsed from ~/.config/zsh/secrets.zsh (without shell eval)
+  3. UNIFI_API_KEY environment variable (fallback)
+"""
+
+import argparse
+import os
+import posixpath
+import shlex
+import ssl
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ALLOWED_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
+CONFIG_PATH = Path.home() / ".config" / "unifi" / "config"
+KEY_FILE_PATH = Path.home() / ".config" / "unifi" / "api-key"
+ZSH_SECRETS_PATH = Path.home() / ".config" / "zsh" / "secrets.zsh"
+
+
+class NoAuthRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Strip X-API-Key if the controller ever redirects to another host."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new_req = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new_req is None:
+            return None
+        old_origin = urllib.parse.urlsplit(req.full_url)
+        new_origin = urllib.parse.urlsplit(new_req.full_url)
+        if (old_origin.scheme, old_origin.netloc) != (
+            new_origin.scheme,
+            new_origin.netloc,
+        ):
+            new_req.remove_header("X-api-key")
+        return new_req
+
+
+def parse_kv_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.is_file():
+        return values
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            tokens = shlex.split(line, comments=True)
+        except ValueError:
+            continue
+        if not tokens:
+            continue
+        if tokens[0] == "export":
+            tokens = tokens[1:]
+        for token in tokens:
+            if "=" in token:
+                k, v = token.split("=", 1)
+                if k:
+                    values[k] = v
+    return values
+
+
+def load_config() -> tuple[str, str | None, float]:
+    cfg = parse_kv_file(CONFIG_PATH)
+    base_url = cfg.get("UNIFI_URL", "").strip().rstrip("/")
+    if not base_url:
+        sys.exit(
+            f"unifi-api: UNIFI_URL is not configured.\n"
+            f"Create {CONFIG_PATH} containing:\n"
+            f"  UNIFI_URL=https://<controller-ip-or-host>"
+        )
+
+    parts = urllib.parse.urlsplit(base_url)
+    if parts.scheme != "https" or not parts.netloc or parts.username or parts.password:
+        sys.exit(
+            f"unifi-api: UNIFI_URL in {CONFIG_PATH} must be an https:// host URL without credentials"
+        )
+    if parts.query or parts.fragment:
+        sys.exit(
+            f"unifi-api: UNIFI_URL in {CONFIG_PATH} must not include a query string or fragment"
+        )
+
+    cacert = cfg.get("UNIFI_CACERT", "").strip() or None
+    if cacert:
+        cacert = os.path.expanduser(cacert)
+
+    timeout_raw = cfg.get("UNIFI_TIMEOUT", "30").strip()
+    try:
+        timeout = float(timeout_raw)
+        if timeout <= 0:
+            raise ValueError
+    except ValueError:
+        sys.exit(f"unifi-api: invalid UNIFI_TIMEOUT in {CONFIG_PATH}: {timeout_raw!r}")
+
+    return base_url, cacert, timeout
+
+
+def load_api_key() -> str:
+    if KEY_FILE_PATH.is_file():
+        for line in KEY_FILE_PATH.read_text(encoding="utf-8").splitlines():
+            key = line.strip()
+            if key and not key.startswith("#"):
+                return key
+
+    secrets = parse_kv_file(ZSH_SECRETS_PATH)
+    if secrets.get("UNIFI_API_KEY"):
+        return secrets["UNIFI_API_KEY"]
+
+    env_key = os.environ.get("UNIFI_API_KEY", "").strip()
+    if env_key:
+        return env_key
+
+    sys.exit(
+        "unifi-api: UNIFI_API_KEY not found in ~/.config/unifi/api-key, "
+        "~/.config/zsh/secrets.zsh, or environment.\n"
+        "Unlock Bitwarden and run `chezmoi apply` to write ~/.config/zsh/secrets.zsh."
+    )
+
+
+def normalize_api_path(raw_path: str) -> str:
+    if not raw_path.startswith("/") or raw_path.startswith("//"):
+        sys.exit("unifi-api: path must start with a single '/' (e.g. /v1/sites)")
+    if any(ch.isspace() or ord(ch) < 32 for ch in raw_path):
+        sys.exit("unifi-api: path must not contain whitespace or control characters")
+
+    split = urllib.parse.urlsplit(raw_path)
+    if split.scheme or split.netloc:
+        sys.exit("unifi-api: pass a relative API path, not a full URL")
+
+    segments = [seg for seg in split.path.split("/") if seg]
+    if ".." in segments:
+        sys.exit("unifi-api: path must not contain '..' segments")
+
+    path = split.path
+    if path == "/v1" or path.startswith("/v1/"):
+        path = "/proxy/network/integration" + path
+    elif path.startswith("/integration/") or path.startswith("/api/"):
+        path = "/proxy/network" + path
+
+    # Collapse redundant slashes while preserving trailing slash if requested
+    trailing = "/" if path.endswith("/") and len(path) > 1 else ""
+    path = posixpath.normpath(path) + trailing
+    if not path.startswith("/"):
+        path = "/" + path
+
+    return urllib.parse.urlunsplit(("", "", path, split.query, ""))
+
+
+def load_body(data_arg: str | None) -> bytes | None:
+    if data_arg is None:
+        return None
+    if data_arg == "@-":
+        return sys.stdin.buffer.read()
+    if data_arg.startswith("@"):
+        file_path = Path(os.path.expanduser(data_arg[1:]))
+        if not file_path.is_file():
+            sys.exit(f"unifi-api: data file not found: {file_path}")
+        return file_path.read_bytes()
+    return data_arg.encode("utf-8")
+
+
+def build_ssl_context(cacert: str | None) -> ssl.SSLContext:
+    if cacert:
+        if not Path(cacert).is_file():
+            sys.exit(f"unifi-api: UNIFI_CACERT file not found: {cacert}")
+        return ssl.create_default_context(cafile=cacert)
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="unifi-api",
+        description=(
+            "Call the UniFi controller API without exposing UNIFI_API_KEY to the caller. "
+            "Automatically prefixes /v1/..., /integration/..., and /api/... with /proxy/network."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  unifi-api /v1/sites\n"
+            "  unifi-api /api/s/default/stat/device\n"
+            "  unifi-api -X PUT -d '{\"name\":\"Switch\"}' /api/s/default/rest/device/<id>\n"
+            "  unifi-api --check"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "path",
+        nargs="?",
+        help="API path starting with '/' (e.g. /v1/sites or /api/s/default/stat/device)",
+    )
+    parser.add_argument(
+        "-X",
+        "--method",
+        default="GET",
+        help="HTTP method: GET, POST, PUT, PATCH, DELETE (default: GET)",
+    )
+    parser.add_argument(
+        "-d",
+        "--data",
+        default=None,
+        help="JSON request body, @file, or @- for stdin",
+    )
+    parser.add_argument(
+        "-i",
+        "--status",
+        action="store_true",
+        help="Print HTTP status line to stderr",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Verify controller URL and API key presence without making a request or printing the key",
+    )
+
+    args = parser.parse_args()
+
+    if args.check:
+        base_url, cacert, _ = load_config()
+        _ = load_api_key()
+        tls_mode = f"verified ({cacert})" if cacert else "self-signed (unverified)"
+        print(f"url: {base_url}")
+        print(f"tls: {tls_mode}")
+        print("api_key: present")
+        return 0
+
+    if not args.path:
+        parser.error("the following arguments are required: path")
+
+    method = args.method.upper()
+    if method not in ALLOWED_METHODS:
+        sys.exit(
+            f"unifi-api: unsupported method {args.method!r} (allowed: {', '.join(ALLOWED_METHODS)})"
+        )
+
+    base_url, cacert, timeout = load_config()
+    api_key = load_api_key()
+    api_path = normalize_api_path(args.path)
+    body = load_body(args.data)
+
+    url = base_url + api_path
+    headers = {
+        "Accept": "application/json",
+        "X-API-Key": api_key,
+    }
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    ssl_ctx = build_ssl_context(cacert)
+    opener = urllib.request.build_opener(
+        NoAuthRedirectHandler(),
+        urllib.request.HTTPSHandler(context=ssl_ctx),
+    )
+
+    try:
+        with opener.open(req, timeout=timeout) as resp:
+            if args.status:
+                print(f"HTTP {resp.status} {resp.reason}", file=sys.stderr)
+            payload = resp.read()
+            if payload:
+                sys.stdout.buffer.write(payload)
+                if not payload.endswith(b"\n"):
+                    sys.stdout.buffer.write(b"\n")
+            return 0
+    except urllib.error.HTTPError as err:
+        print(f"unifi-api: HTTP {err.code} {err.reason} ({method} {api_path})", file=sys.stderr)
+        err_body = err.read()
+        if err_body:
+            sys.stderr.buffer.write(err_body)
+            if not err_body.endswith(b"\n"):
+                sys.stderr.buffer.write(b"\n")
+        return 1
+    except urllib.error.URLError as err:
+        print(f"unifi-api: request failed ({method} {api_path}): {err.reason}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

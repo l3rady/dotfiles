@@ -38,6 +38,9 @@
 # Terraform: `terraform login` API tokens
 .terraform.d/credentials.tfrc.json
 
+# Machine-local UniFi controller URL/cert config (keeps LAN IPs out of the public repo)
+.config/unifi
+
 # WSL-only clipboard helpers (don't shadow macOS's built-in pbcopy/pbpaste)
 {{- if not .isWSL }}
 .local/bin/pbcopy

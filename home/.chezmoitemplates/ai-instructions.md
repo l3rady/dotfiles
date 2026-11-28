@@ -59,6 +59,12 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
 - Never dump the environment with `env`, `printenv`, `export`, or `set`, and never
   interpolate secret variables into command output or error messages. To check whether a
   variable is set, test presence only (e.g. `test -n "${VAR:-}" && echo set || echo unset`).
+- **UniFi controller API:** use `unifi-api` (`~/.local/bin/unifi-api`) instead of calling
+  `curl` with `UNIFI_API_KEY`. It loads `UNIFI_API_KEY` internally (never exposing it in
+  the environment or command arguments), supports `GET`/`POST`/`PUT`/`PATCH`/`DELETE`
+  (`-X`, `-d`), and automatically adds `/proxy/network` for `/v1/...`, `/integration/...`,
+  and `/api/...` paths (e.g. `unifi-api /v1/sites`, `unifi-api /api/s/default/stat/device`).
+  Follow the **Working style** rules below before making write calls to live network config.
 - Secrets inside repos are encrypted with **sops + age** (key at
   `~/.config/sops/age/keys.txt`). Decrypt to a file or pipe, never to the screen.
 

@@ -374,6 +374,27 @@ come from Bitwarden via a template.
 - **`~/.kube/config`** is never stored. When it's missing, `chezmoi apply`
   asks the cluster for an admin kubeconfig (needs `~/.talos/config` and the
   home network), so each machine gets its own certificate.
+- **`unifi-api` (`~/.local/bin/unifi-api`):** lightweight read/write wrapper for
+  the UniFi controller API that reads `UNIFI_API_KEY` internally from
+  `~/.config/zsh/secrets.zsh` (or `~/.config/unifi/api-key`) without exposing the
+  key in agent environments or command arguments. Create the untracked
+  `~/.config/unifi/config` once per machine:
+  ```sh
+  mkdir -p ~/.config/unifi
+  cat > ~/.config/unifi/config <<'EOF'
+  UNIFI_URL=https://<controller-ip-or-host>
+  # Optional: verify TLS against a pinned controller PEM cert
+  # UNIFI_CACERT=~/.config/unifi/controller.pem
+  EOF
+  ```
+  Then query or mutate the API directly (paths under `/v1/...`, `/integration/...`,
+  and `/api/...` are automatically prefixed with `/proxy/network`):
+  ```sh
+  unifi-api --check
+  unifi-api /v1/sites | jq
+  unifi-api /api/s/default/stat/device | jq
+  unifi-api -X PUT -d '{"name":"Switch"}' /api/s/default/rest/device/<id>
+  ```
 
 ## Projects
 
@@ -489,7 +510,7 @@ home/
                               providers cached in ~/.cache/terraform, no ~/.terraform.d)
     zsh/aliases/agents.zsh.tmpl -> ~/.config/zsh/aliases/agents.zsh (Bash harness wrappers)
     zsh/private_secrets.zsh.tmpl -> ~/.config/zsh/secrets.zsh (from Bitwarden)
-  dot_local/bin/            -> ~/.local/bin/{memcap,pbcopy,pbpaste} (pbcopy/pbpaste WSL-only)
+  dot_local/bin/            -> ~/.local/bin/{memcap,pbcopy,pbpaste,unifi-api} (pbcopy/pbpaste WSL-only)
   private_dot_cloudflared/  -> ~/.cloudflared/{cert.pem,credentials.json} (from Bitwarden)
   private_dot_ssh/          -> ~/.ssh/{id_ed25519,id_ed25519.pub} (from Bitwarden)
   private_dot_talos/        -> ~/.talos/config (from Bitwarden)
