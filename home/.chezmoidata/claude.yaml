@@ -27,6 +27,19 @@ claude:
     env:
       CLAUDE_CODE_SHELL: "/usr/bin/bash"
       CLAUDE_ENV_FILE: "~/.config/shell/env.sh"
+    # Merged into permissions.deny (see modify_settings.json.tmpl), preserving
+    # permissions.defaultMode and any user allow/ask/deny rules.
+    permissions:
+      deny:
+        - "Read(~/.config/zsh/secrets.zsh)"
+        - "Read(~/.config/sops/age/keys.txt)"
+        - "Read(~/.ssh/id_ed25519)"
+        - "Read(~/.talos/config)"
+        - "Read(~/.cloudflared/credentials.json)"
+        - "Read(.env)"
+        - "Read(.env.*)"
+        - "Read(**/.env)"
+        - "Read(**/.env.*)"
     # Merged into the hooks already in settings.json (see modify_settings.json.tmpl), so
     # hooks that plugins add are kept. Blocks a push whose commits have a first line
     # over 72 characters, which commitlint rejects in CI.

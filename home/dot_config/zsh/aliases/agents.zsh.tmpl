@@ -1,11 +1,42 @@
 # Managed by chezmoi (home/dot_config/zsh/aliases/agents.zsh.tmpl).
-# Launch AI coding harnesses with GNU Bash as their tool shell while keeping
-# the interactive terminal on Zsh.
+# Launch AI coding harnesses in GNU Bash with sensitive interactive environment
+# variables scrubbed by default, while keeping the interactive terminal on Zsh.
+#
+# Opt in to a specific scoped token for one session when needed:
+#   AI_AGENT_ALLOW_ENV=GITHUB_PUBLIC_TOKEN claude
+#   AI_AGENT_ALLOW_ENV=GITHUB_PUBLIC_TOKEN,UNIFI_API_KEY codex
 
 _run_ai_harness() {
   local bin="$1"
   shift
-  env SHELL=/usr/bin/bash CLAUDE_CODE_SHELL=/usr/bin/bash "$bin" "$@"
+
+  local -a scrub_vars=(
+    BW_SESSION
+{{- range .secretEnv }}
+    {{ .name }}
+{{- end }}
+    AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY
+    AWS_SESSION_TOKEN
+    AZURE_CLIENT_SECRET
+    GOOGLE_APPLICATION_CREDENTIALS
+  )
+
+  local -a allow_list=()
+  if [[ -n "${AI_AGENT_ALLOW_ENV:-}" ]]; then
+    allow_list=(${(s:,:)${AI_AGENT_ALLOW_ENV//:/,}})
+  fi
+
+  local -a env_args=(-u AI_AGENT_ALLOW_ENV)
+  local var
+  for var in "${scrub_vars[@]}"; do
+    if (( ${allow_list[(Ie)$var]} == 0 )); then
+      env_args+=(-u "$var")
+    fi
+  done
+  env_args+=(SHELL=/usr/bin/bash CLAUDE_CODE_SHELL=/usr/bin/bash)
+
+  env "${env_args[@]}" "$bin" "$@"
 }
 
 for _harness in claude codex agy t3 herdr; do

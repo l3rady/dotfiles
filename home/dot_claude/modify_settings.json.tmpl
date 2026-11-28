@@ -19,7 +19,7 @@ except json.JSONDecodeError as err:
 # Only replace values whose content differs, so key order Claude Code chose
 # is kept and an unchanged file stays byte-for-byte the same.
 for key, value in managed.items():
-    if key in ("hooks", "env"):
+    if key in ("hooks", "env", "permissions"):
         continue
     if settings.get(key) != value:
         settings[key] = value
@@ -37,6 +37,26 @@ if isinstance(managed_env, dict) and managed_env:
             env_val = os.path.expanduser(env_val)
         if existing_env.get(env_key) != env_val:
             existing_env[env_key] = env_val
+
+# Managed permissions lists (e.g. deny rules) are merged without clobbering
+# permissions.defaultMode or unmanaged allow/ask/deny entries.
+managed_perms = managed.get("permissions", {})
+if isinstance(managed_perms, dict) and managed_perms:
+    existing_perms = settings.get("permissions")
+    if not isinstance(existing_perms, dict):
+        existing_perms = {}
+        settings["permissions"] = existing_perms
+    for perm_key, perm_val in managed_perms.items():
+        if isinstance(perm_val, list):
+            current_list = existing_perms.get(perm_key)
+            if not isinstance(current_list, list):
+                current_list = []
+                existing_perms[perm_key] = current_list
+            for rule in perm_val:
+                if rule not in current_list:
+                    current_list.append(rule)
+        elif existing_perms.get(perm_key) != perm_val:
+            existing_perms[perm_key] = perm_val
 
 # Managed hooks live under ~/.claude/hooks/ (from dot_claude/hooks/). Any entry
 # whose commands all come from that directory is owned by chezmoi, so edits or

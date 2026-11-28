@@ -56,6 +56,9 @@ Project-level instructions (a repo's own CLAUDE.md / AGENTS.md) take precedence 
 - Secrets live in **Bitwarden**. Never commit them, and never print secret values to the
   terminal or into a conversation (filter commands so only names, counts or yes/no reach
   the output).
+- Never dump the environment with `env`, `printenv`, `export`, or `set`, and never
+  interpolate secret variables into command output or error messages. To check whether a
+  variable is set, test presence only (e.g. `test -n "${VAR:-}" && echo set || echo unset`).
 - Secrets inside repos are encrypted with **sops + age** (key at
   `~/.config/sops/age/keys.txt`). Decrypt to a file or pipe, never to the screen.
 

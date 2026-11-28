@@ -135,16 +135,25 @@ their shell tools in non-interactive GNU Bash (avoiding Zsh/Bash syntax mismatch
 bloated oh-my-zsh shell snapshots):
 
 - **Claude Code:** `home/.chezmoidata/claude.yaml` sets `env.CLAUDE_CODE_SHELL` to
-  `/usr/bin/bash` and `env.CLAUDE_ENV_FILE` to `~/.config/shell/env.sh` (expanded per host
-  and merged into `~/.claude/settings.json` by `modify_settings.json.tmpl`, preserving
-  unmanaged `env` keys).
+  `/usr/bin/bash`, `env.CLAUDE_ENV_FILE` to `~/.config/shell/env.sh` (expanded per host),
+  and managed `permissions.deny` rules blocking direct `Read` access to managed secret
+  files and `.env*` — all merged into `~/.claude/settings.json` by
+  `modify_settings.json.tmpl` without clobbering unmanaged `env` keys,
+  `permissions.defaultMode`, or user permission rules.
 - **Codex CLI:** `home/.chezmoidata/codex.yaml` and `home/dot_codex/modify_config.toml.tmpl`
-  merge `allow_login_shell = false` and `[shell_environment_policy.set] SHELL = "/usr/bin/bash"`
-  into `~/.codex/config.toml` while preserving unmanaged runtime keys.
+  merge `allow_login_shell = false`, `[shell_environment_policy]` `exclude` patterns
+  (`BW_SESSION`, `*_SECRET*`, `*_TOKEN`, `*_KEY`), and
+  `[shell_environment_policy.set] SHELL = "/usr/bin/bash"` into `~/.codex/config.toml`
+  while preserving unmanaged runtime keys.
 - **Interactive Zsh launchers:** `home/dot_config/zsh/aliases/agents.zsh.tmpl` wraps
   `claude`, `codex`, `agy`, `t3`, and `herdr` so launching them from Zsh passes
-  `SHELL=/usr/bin/bash` and `CLAUDE_CODE_SHELL=/usr/bin/bash` without changing your
-  interactive Zsh session.
+  `SHELL=/usr/bin/bash` and `CLAUDE_CODE_SHELL=/usr/bin/bash` and scrubs `BW_SESSION`,
+  every variable in `home/.chezmoidata/secrets.yaml` (`secretEnv`), and common cloud
+  credential vars by default. Opt in to a scoped token for a single session when needed:
+  ```sh
+  AI_AGENT_ALLOW_ENV=GITHUB_PUBLIC_TOKEN claude
+  AI_AGENT_ALLOW_ENV=GITHUB_PUBLIC_TOKEN,UNIFI_API_KEY codex
+  ```
 
 ## Remote sessions (headless VM)
 
@@ -330,7 +339,7 @@ is tracked, so it follows me to every machine:
 
 | Tracked | Why |
 |---|---|
-| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications, and managed hooks. Other keys, such as hooks plugins add, are left alone |
+| `~/.claude/settings.json` (selected keys) | The keys in `home/.chezmoidata/claude.yaml`: model and effort, attribution (off), theme, notifications, Bash shell `env`, secret-file `permissions.deny` rules, and managed hooks. Other keys (such as `permissions.defaultMode`, unmanaged `env` keys, and plugin hooks) are left alone |
 | `~/.claude/CLAUDE.md` | Shared instructions (`ai-instructions.md`) plus shared delegation rules (`ai-delegation.md`) |
 | `~/.claude/agents/` | Native Claude Code subagent wrappers rendered from `home/.chezmoidata/ai.yaml` and `home/.chezmoitemplates/agents/` (after [this post](https://www.andreagrandi.it/posts/claude-code-subagents-to-save-usage/)) |
 | `~/.claude/hooks/` | `check-commit-headers.sh` (`PreToolUse` Bash hook that blocks `git push` if a commit header exceeds 72 characters) |
@@ -503,6 +512,25 @@ To scan the whole history by hand: `chezmoi cd && gitleaks git --redact`.
 
 If a secret ever does get pushed, **rotate it first**. Removing it from git
 doesn't help once it's been public.
+
+### AI agent secret isolation
+
+Secrets exported into interactive Zsh (`~/.config/zsh/secrets.zsh`, `~/.zshrc.local`,
+active `BW_SESSION`) are isolated from AI coding harnesses by three layers:
+
+1. **Shell split + Zsh launcher scrubbing:** `~/.config/shell/env.sh` and `~/.bashrc`
+   never source `~/.config/zsh/secrets.zsh` or `~/.zshrc.local`, and the Zsh wrappers in
+   `home/dot_config/zsh/aliases/agents.zsh.tmpl` unset `BW_SESSION`, all `secretEnv`
+   variables from `home/.chezmoidata/secrets.yaml`, and common cloud credential vars
+   before launching `claude`, `codex`, `agy`, `t3`, or `herdr`. Pass a scoped token
+   explicitly for one session with `AI_AGENT_ALLOW_ENV=GITHUB_PUBLIC_TOKEN claude`.
+2. **Claude Code `permissions.deny`:** `home/.chezmoidata/claude.yaml` blocks `Read`
+   access to `~/.config/zsh/secrets.zsh`, `~/.config/sops/age/keys.txt`,
+   `~/.ssh/id_ed25519`, `~/.talos/config`, `~/.cloudflared/credentials.json`, and
+   `.env` / `.env.*` (merged without touching `permissions.defaultMode` or user rules).
+3. **Codex `[shell_environment_policy]`:** `home/.chezmoidata/codex.yaml` sets
+   `allow_login_shell = false` and `exclude = ["BW_SESSION", "*_SECRET*", "*_TOKEN", "*_KEY"]`
+   in `~/.codex/config.toml`.
 
 ### Where secrets live instead
 

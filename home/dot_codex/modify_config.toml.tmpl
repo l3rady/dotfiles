@@ -59,7 +59,13 @@ def upsert_key_in_range(lines, start, end, key, formatted_value):
     for i in range(start, end):
         m = key_re.match(lines[i])
         if m:
-            lines[i] = f"{m.group(1)}{key} = {formatted_value}\n"
+            # Handle multi-line arrays like `exclude = [\n ...\n]`
+            span_end = i + 1
+            depth = lines[i].count("[") - lines[i].count("]")
+            while depth > 0 and span_end < end:
+                depth += lines[span_end].count("[") - lines[span_end].count("]")
+                span_end += 1
+            lines[i:span_end] = [f"{m.group(1)}{key} = {formatted_value}\n"]
             return True
     insert_at = end
     while insert_at > start and lines[insert_at - 1].strip() == "":
@@ -68,12 +74,19 @@ def upsert_key_in_range(lines, start, end, key, formatted_value):
     return True
 
 
-def upsert_section_key(lines, section_name, key, formatted_value):
+def upsert_section_key(lines, section_name, key, formatted_value, before_section=None):
     bounds = find_section_bounds(lines, section_name)
     if bounds is not None:
         start, end = bounds
         upsert_key_in_range(lines, start + 1, end, key, formatted_value)
         return
+    if before_section is not None:
+        before_bounds = find_section_bounds(lines, before_section)
+        if before_bounds is not None:
+            idx = before_bounds[0]
+            block = [f"[{section_name}]\n", f"{key} = {formatted_value}\n", "\n"]
+            lines[idx:idx] = block
+            return
     if lines and lines[-1].strip() != "":
         lines.append("\n")
     lines.append(f"[{section_name}]\n")
@@ -101,6 +114,26 @@ policy_cfg = managed.get("shell_environment_policy", {})
 existing_policy = parsed.get("shell_environment_policy", {})
 if not isinstance(existing_policy, dict):
     existing_policy = {}
+
+# Managed env exclusion patterns under [shell_environment_policy]
+managed_exclude = policy_cfg.get("exclude", [])
+if isinstance(managed_exclude, list) and managed_exclude:
+    existing_exclude = existing_policy.get("exclude", [])
+    if not isinstance(existing_exclude, list):
+        existing_exclude = []
+    merged_exclude = list(existing_exclude)
+    for pattern in managed_exclude:
+        if pattern not in merged_exclude:
+            merged_exclude.append(pattern)
+    if merged_exclude != existing_exclude:
+        upsert_section_key(
+            lines,
+            "shell_environment_policy",
+            "exclude",
+            format_toml_value(merged_exclude),
+            before_section="shell_environment_policy.set",
+        )
+        changed = True
 
 # Managed env overrides under shell_environment_policy.set
 managed_set = policy_cfg.get("set", {})
@@ -145,6 +178,8 @@ except tomllib.TOMLDecodeError as err:
 
 if "allow_login_shell" in managed:
     assert verified.get("allow_login_shell") == managed["allow_login_shell"]
+for pattern in managed_exclude:
+    assert pattern in verified.get("shell_environment_policy", {}).get("exclude", [])
 for env_key, env_val in managed_set.items():
     assert verified.get("shell_environment_policy", {}).get("set", {}).get(env_key) == env_val
 

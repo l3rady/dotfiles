@@ -4,5 +4,10 @@
 codex:
   allow_login_shell: false
   shell_environment_policy:
+    exclude:
+      - BW_SESSION
+      - "*_SECRET*"
+      - "*_TOKEN"
+      - "*_KEY"
     set:
       SHELL: "/usr/bin/bash"
